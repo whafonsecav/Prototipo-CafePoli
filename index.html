@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Café Poli · Recorrido 360° · City Campus</title>
-  <meta name="description" content="Recorrido 360° fotorrealista de Café Poli en el segundo piso de City Campus del Politécnico Grancolombiano: Modo Conexión, Modo Avión, la barra, la app y la vitrina de logros. Somos origen. Somos Poli. Somos país.">
+  <meta name="description" content="Recorrido 360° fotorrealista de Café Poli en el segundo piso de City Campus del Politécnico Grancolombiano: Modo Conexión, Modo Avión, la barra, la app y la vitrina de logros. Somos origen. Somos país. Somos Poli.">
   <meta name="author" content="William Fonseca">
   <link rel="icon" href="assets/isotipo.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Nunito+Sans:wght@400;600;700;800&display=swap">
   <link rel="stylesheet" href="css/estilos.css">
   <link rel="stylesheet" href="css/tour.css">
   <script type="importmap">
@@ -29,8 +29,8 @@
       <p class="carga-sub">Segundo piso del Politécnico Grancolombiano</p>
       <div class="barra-carga"><span id="carga-progreso"></span></div>
       <p id="carga-texto">Preparando el café…</p>
-      <button id="btn-entrar" class="btn btn-principal" disabled>Entrar con PolGreco</button>
-      <p class="nota-carga">Arrastra para mirar alrededor. Con voz en español si tu navegador la tiene. Funciona en computador y celular.</p>
+      <button id="btn-entrar" class="btn btn-principal" disabled>Entrar con Poligreca</button>
+      <p class="nota-carga">Arrastra para mirar alrededor. Poligreca te guía con su voz: sube el volumen. Funciona en celular, tableta y computador.</p>
     </div>
   </div>
 
@@ -52,7 +52,7 @@
   </header>
 
   <section id="guia" class="oculto" aria-live="polite">
-    <div class="coli-avatar"><img id="avatar-img" src="assets/polgreco_a.png" alt="PolGreco, el primo cafetero de Polito, guía del recorrido"></div>
+    <div class="coli-avatar"><img id="avatar-img" src="assets/poligreca_a.png" alt="Poligreca, la prima cafetera de Polito, guía del recorrido"></div>
     <div class="burbuja">
       <div class="burbuja-cab"><span id="paso-num">Paso 1</span><button id="btn-repetir" class="enlace" aria-label="Repetir la voz">↻ Repetir</button></div>
       <h2 id="paso-titulo">¡Hola!</h2>
@@ -99,9 +99,37 @@
     </div>
   </div>
 
+  <div id="carta" class="capa oculto" role="dialog" aria-modal="true" aria-labelledby="carta-titulo">
+    <article class="carta-caja">
+      <header class="carta-cab">
+        <img src="assets/pantallas/isotipo-blanco.svg" alt="" class="carta-iso" width="44" height="44">
+        <div class="carta-titulos">
+          <p class="carta-ceja">Café Poli · City Campus</p>
+          <h3 id="carta-titulo">La carta</h3>
+          <p class="carta-sub">Precios de estudiante con impuestos incluidos</p>
+        </div>
+        <button id="carta-cerrar" class="icono" aria-label="Cerrar la carta">✕</button>
+      </header>
+      <div class="carta-barra">
+        <div class="carta-tabs" role="tablist" aria-label="Secciones de la carta">
+          <button class="carta-tab activo" data-tab="bebidas" role="tab" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h13v4a6 6 0 0 1-6 6h-1a6 6 0 0 1-6-6zM17 11h1.5a2.5 2.5 0 0 1 0 5H16M8 3c-1 1.5 1 2.5 0 4M12 3c-1 1.5 1 2.5 0 4"/></svg>Bebidas</button>
+          <button class="carta-tab" data-tab="comidas" role="tab" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13c0-4 3.6-7 8-7s8 3 8 7v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zM9 9.5l-1 3M13 9l-.5 3.5M16.5 10l.5 2.5"/></svg>Comidas</button>
+        </div>
+        <span class="carta-termo"><b>−$300</b> con tu termo</span>
+      </div>
+      <div class="carta-cuerpo">
+        <div id="carta-grid" class="carta-grid"></div>
+        <div class="carta-pie">
+          <div class="carta-qr"><span id="carta-qr"></span><span><b>Escanea el QR y pide desde tu mesa</b>Paga en la app y recoge en la barra</span></div>
+          <p class="carta-estratos">Pensado para estratos 1, 2 y 3: un tinto vale $2.000 (3 % del salario mínimo diario), en cadenas entre $4.800 y $7.000.</p>
+        </div>
+      </div>
+    </article>
+  </div>
+
   <div id="reanudar" class="capa oculto" role="dialog">
     <div class="carga-caja">
-      <img src="assets/polgreco_saluda.png" alt="PolGreco saluda" class="reanudar-coli" onerror="this.style.display='none'">
+      <img src="assets/poligreca_saluda.png" alt="Poligreca saluda" class="reanudar-coli" onerror="this.style.display='none'">
       <h2>¡Volviste!</h2>
       <p id="reanudar-texto">¿Seguimos donde ibas?</p>
       <div class="fila-botones">

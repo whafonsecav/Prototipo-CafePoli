@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Nunito+Sans:wght@400;600;700;800&display=swap');
 :root {
   --navy: #0F385A;
   --navy-2: #0a2740;
@@ -6,12 +7,12 @@
   --cian: #15BECE;
   --verde: #A6CE38;
   --cafe: #6B4226;
-  --crema: #F5EBDD;
+  --crema: #FFF4E3;
   --blanco: #ffffff;
   --texto: #1d2733;
   --suave: #5c6b7a;
-  --f-titulo: "Baloo 2", "Trebuchet MS", system-ui, sans-serif;
-  --f-texto: "Nunito", "Segoe UI", system-ui, sans-serif;
+  --f-titulo: "Sora", "Trebuchet MS", system-ui, sans-serif;
+  --f-texto: "Nunito Sans", "Segoe UI", system-ui, sans-serif;
   --sombra: 0 10px 30px rgba(6, 22, 38, .28);
 }
 * { box-sizing: border-box; }
@@ -98,14 +99,14 @@ button { font-family: inherit; cursor: pointer; }
 
 /* App dentro del celular */
 .app { min-height: 100%; display: flex; flex-direction: column; font-size: .92rem; }
-.app-cab { background: var(--navy); color: #fff; padding: 46px 18px 16px; border-radius: 0 0 22px 22px; }
+.app-cab { background: radial-gradient(130% 160% at 0% 0%, #174B76, var(--navy) 55%, #0A2A45); color: #fff; padding: 46px 18px 16px; border-radius: 0 0 22px 22px; }
 .app-cab .fila { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.app-cab h3 { font-family: var(--f-titulo); margin: 4px 0 0; font-size: 1.35rem; line-height: 1.1; }
+.app-cab h3 { font-family: var(--f-titulo); font-weight: 800; margin: 4px 0 0; font-size: 1.3rem; line-height: 1.1; letter-spacing: -.01em; }
 .app-cab small { opacity: .85; }
 .app-cab img { height: 30px; }
 .app-volver { background: rgba(255,255,255,.15); color: #fff; border: 0; border-radius: 999px; padding: 6px 12px; font-weight: 800; font-size: .8rem; }
 .app-cuerpo { padding: 14px 14px 20px; flex: 1; }
-.tarjeta { background: #fff; border-radius: 16px; padding: 12px 14px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(15,56,90,.08); }
+.tarjeta { background: #fff; border-radius: 16px; padding: 12px 14px; margin-bottom: 10px; box-shadow: 0 1px 2px rgba(15,56,90,.06), 0 4px 14px rgba(15,56,90,.07); }
 .tarjeta h4 { margin: 0 0 4px; font-family: var(--f-titulo); color: var(--navy); font-size: 1.05rem; }
 .tarjeta p { margin: 0; color: var(--suave); font-size: .84rem; line-height: 1.35; }
 .botones-inicio { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
@@ -113,15 +114,18 @@ button { font-family: inherit; cursor: pointer; }
 .boton-grande span { font-size: 1.5rem; }
 .bg-magenta { background: var(--magenta); } .bg-navy { background: var(--navy); } .bg-oro { background: var(--oro); color: var(--navy) !important; } .bg-cian { background: var(--cian); }
 .puntos-barra { height: 10px; border-radius: 6px; background: #eadfce; overflow: hidden; margin: 8px 0 4px; }
-.puntos-barra span { display: block; height: 100%; background: linear-gradient(90deg, var(--cian), var(--verde)); }
+.puntos-barra span { display: block; height: 100%; background: linear-gradient(90deg, var(--oro), #ffc94d); }
 .categoria { font-family: var(--f-titulo); color: var(--navy); font-size: 1rem; margin: 12px 2px 6px; }
-.producto { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #fff; border-radius: 14px; padding: 10px 12px; margin-bottom: 8px; }
-.producto .nombre { font-weight: 800; font-size: .88rem; line-height: 1.2; }
-.producto .precio { color: var(--magenta); font-weight: 800; font-size: .86rem; }
+.categoria-color { border-left: 6px solid var(--cat); background: #fff; border-radius: 6px 12px 12px 6px; padding: 7px 10px; margin: 16px 0 8px; line-height: 1.15; }
+.categoria-color small { display: block; font-family: var(--f-texto); font-size: .72rem; font-weight: 700; color: var(--suave); margin-top: 2px; }
+.nota-cat { font-size: .74rem; color: var(--suave); margin: -2px 4px 8px; }
+.producto { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #fff; border-radius: 14px; padding: 10px 12px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(15,56,90,.06); }
+.producto .nombre { font-weight: 700; font-size: .88rem; line-height: 1.25; color: var(--texto); }
+.producto .precio { color: var(--navy); font-family: var(--f-titulo); font-weight: 700; font-size: .86rem; }
 .producto .termo { color: var(--suave); font-size: .74rem; }
 .mas { width: 34px; height: 34px; border-radius: 50%; border: 0; background: var(--navy); color: #fff; font-size: 1.2rem; font-weight: 800; flex: 0 0 auto; }
 .cant { font-weight: 800; min-width: 18px; text-align: center; }
-.carrito-flotante { position: sticky; bottom: 0; padding: 10px 14px 14px; background: linear-gradient(180deg, rgba(245,235,221,0), var(--crema) 30%); }
+.carrito-flotante { position: sticky; bottom: 0; padding: 10px 14px 14px; background: linear-gradient(180deg, rgba(255,244,227,0), var(--crema) 30%); }
 .carrito-flotante .btn { width: 100%; }
 .campo { display: block; margin-bottom: 10px; }
 .campo span { display: block; font-weight: 800; font-size: .8rem; color: var(--navy); margin-bottom: 4px; }
@@ -135,7 +139,7 @@ button { font-family: inherit; cursor: pointer; }
 .linea.total { font-weight: 800; font-size: 1rem; color: var(--navy); border-top: 1px dashed #d8c9b2; padding-top: 8px; margin-top: 8px; }
 .exito { text-align: center; padding: 20px 6px; }
 .exito .grande { font-size: 3rem; }
-.codigo { font-family: "Courier New", monospace; font-size: 1.6rem; font-weight: 800; letter-spacing: 3px; color: var(--navy); background: #fff; border: 2px dashed var(--magenta); border-radius: 12px; padding: 10px; margin: 10px 0; }
+.codigo { font-family: var(--f-titulo); font-size: 1.5rem; font-weight: 700; letter-spacing: .18em; color: var(--navy); background: #fff; border: 2px dashed var(--magenta); border-radius: 12px; padding: 10px; margin: 10px 0; }
 .interruptor { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #fff; border-radius: 14px; padding: 10px 12px; margin-bottom: 10px; font-weight: 700; font-size: .86rem; }
 .interruptor input { width: 20px; height: 20px; accent-color: var(--magenta); }
 .cargando { display: inline-block; width: 18px; height: 18px; border: 3px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: gira .8s linear infinite; vertical-align: middle; }
@@ -175,7 +179,7 @@ button { font-family: inherit; cursor: pointer; }
 .nav-app button span { font-size: 1.15rem; }
 .nav-app button.activo { color: var(--magenta); }
 .btn-demo { width: 100%; margin-bottom: 10px; background: linear-gradient(90deg, var(--magenta), #ff4f9a); }
-.tarjeta-regalo { border-radius: 20px; padding: 16px; color: #fff; background: radial-gradient(circle at 85% 10%, rgba(251,175,23,.35), transparent 40%), linear-gradient(135deg, #E0006E, #7a0c55 60%, #0F385A); box-shadow: 0 14px 30px rgba(122,12,85,.35); position: relative; overflow: hidden; }
+.tarjeta-regalo { border-radius: 20px; padding: 16px; color: #fff; background: radial-gradient(circle at 88% 8%, rgba(224,0,110,.45), transparent 38%), radial-gradient(130% 150% at 0% 0%, #174B76, #0F385A 55%, #0A2A45); box-shadow: 0 14px 30px rgba(6,22,38,.35); position: relative; overflow: hidden; }
 .tarjeta-regalo::after { content: "❤"; position: absolute; right: -10px; bottom: -26px; font-size: 7rem; opacity: .08; }
 .tr-cab { display: flex; justify-content: space-between; align-items: center; }
 .tr-cab img { height: 26px; }
@@ -186,10 +190,10 @@ button { font-family: inherit; cursor: pointer; }
 .tr-firma { text-align: right; font-weight: 800; }
 .tr-pie { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; margin-top: 10px; background: rgba(255,255,255,.12); border-radius: 14px; padding: 8px 10px; }
 .tr-pie small { display: block; font-size: .68rem; opacity: .85; }
-.tr-codigo { font-family: "Courier New", monospace; font-weight: 800; font-size: 1.3rem; letter-spacing: 2px; }
+.tr-codigo { font-family: var(--f-titulo); font-weight: 700; font-size: 1.2rem; letter-spacing: .14em; }
 .tr-qr { width: 64px; height: 64px; border-radius: 6px; }
 .wa-msg.con-tarjeta { padding-top: 6px; }
-.wa-tarjeta { display: flex; flex-direction: column; gap: 2px; background: linear-gradient(135deg, #E0006E, #0F385A); color: #fff; border-radius: 8px; padding: 10px; margin-bottom: 6px; font-size: .8rem; white-space: normal; }
+.wa-tarjeta { display: flex; flex-direction: column; gap: 2px; background: #0F385A; border-left: 4px solid var(--magenta); color: #fff; border-radius: 8px; padding: 10px; margin-bottom: 6px; font-size: .8rem; white-space: normal; }
 .wa-tarjeta em { opacity: .9; }
 .wa-msg.escribiendo { display: inline-flex; gap: 4px; padding: 10px 12px; }
 .wa-msg.escribiendo i { width: 7px; height: 7px; border-radius: 50%; background: #9aa5ab; animation: salto 1s infinite; }

@@ -28,7 +28,7 @@ let narrador = null;
 export function alNarrar(fn) { narrador = fn; }
 const NARRA = {
   inicio: ["La app de Café Poli", "Desde aquí pides y recoges sin fila, regalas un Café Poli, ves tus Puntos Colibrí y lo que te ahorras con tu termo."],
-  menu: ["La carta en tu celular", "Son los mismos precios de la barra. Si la bebida aplica, ves cuánto vale con tu termo. Toca el más para agregar."],
+  menu: ["La carta en tu celular", "La carta va por mundos de color, con los mismos precios de la barra. Si la bebida aplica, ves cuánto vale con tu termo. Toca el signo más para agregar."],
   pedido: ["Elige la hora y paga", "Escoges cuándo recoger, por ejemplo en el descanso, y pagas con Nequi, Daviplata, Bre-B o tarjeta. El pedido entra directo a la caja y al inventario."],
   pagado: ["¡Listo!", "La barra prepara tu pedido a tiempo y te lo entregan por tu nombre. Además sumaste Puntos Colibrí."],
   regalo: ["Regala un Café Poli", "Eliges para quién es, qué le das y escribes tu mensaje. Lo firmas tú: aquí no hay regalos anónimos."],
@@ -130,7 +130,15 @@ function ir(nombre) {
   if (enlazar) enlazar();
 }
 
-const FOTO = { tinto: "☕", leche: "☕", capu: "☕", latte: "🥛", parcial: "⚡", choco: "🍫", aroma: "🍵", panela: "🍋", frio: "🧊", jugo: "🥤", pan: "🥖", arepa: "🫓", empanada: "🥟", sandwich: "🥪", croissant: "🥐", brownie: "🍪", fruta: "🍓", pausa: "☕", desayuno: "🍳", cparcial: "⚡", vaso: "🥤", termo: "🧉" };
+const FOTO = {
+  tinto: "☕", campesino: "☕", leche: "☕", capu: "☕", latte: "🥛", frio: "🧊",
+  parcial: "⚡", espresso: "☕", cparcial: "⚡",
+  teNegro: "🫖", teVerde: "🍵", frutos: "🍒", chai: "🧋", cata: "🫖",
+  aroma: "🌿", panela: "🍋", choco: "🍫", avena: "🌾", jugo: "🍊",
+  pan: "🥯", panyuca: "🥖", bunuelo: "🧆", almojabana: "🍞", arepa: "🫓", boyacense: "🌽", arepahuevo: "🥚", empanada: "🥟", sandwich: "🥪",
+  tortica: "🧁", zanahoria: "🥕", cheesecake: "🍰", brownie: "🍪", galletas: "🍪", postre2: "💞", fruta: "🍓",
+  pausa: "☕", desayuno: "🍳", tardecata: "🫖", vaso: "🥤", termo: "🧉",
+};
 const nav = (activo) => `
   <nav class="nav-app">
     ${[["inicio", "🏠", "Inicio"], ["menu", "☕", "Pedir"], ["regalo", "🎁", "Regalar"], ["puntos", "⭐", "Puntos"]].map(([id, ic, t]) => `<button data-ir="${id}" class="${id === activo ? "activo" : ""}"><span>${ic}</span>${t}</button>`).join("")}
@@ -188,7 +196,7 @@ const PANTALLAS = {
       ${cab("Pide y recoge", "Paga aquí y recoge sin hacer fila")}
       <div class="app-cuerpo">
         ${CARTA.map((c) => `
-          <div class="categoria">${c.cat}</div>
+          <div class="categoria categoria-color" style="--cat:${c.color || "#0F385A"}">${c.cat}${c.lema ? `<small>${c.lema}</small>` : ""}</div>
           ${c.items.map((p) => `
             <div class="producto">
               <div class="foto">${FOTO[p.id] || "☕"}</div>
@@ -202,7 +210,8 @@ const PANTALLAS = {
                 ${estado.carrito[p.id] ? `<span class="cant">${estado.carrito[p.id]}</span>` : ""}
                 <button class="mas" data-add="${p.id}" aria-label="Agregar ${p.nombre}">+</button>
               </div>
-            </div>`).join("")}`).join("")}
+            </div>`).join("")}
+          ${c.nota ? `<p class="nota-cat">${c.nota}</p>` : ""}`).join("")}
       </div>
       <div class="carrito-flotante">
         <button class="btn btn-principal" data-ir="pedido" ${n ? "" : "disabled"}>Ver pedido (${n}) · ${fmt(t.total)}</button>

@@ -1,9 +1,11 @@
-// Café Poli · recorrido 360° fotorrealista con PolGreco como guía.
+// Café Poli · recorrido 360° fotorrealista con Poligreca como guía.
 import * as THREE from "three";
 import { PASOS, NODOS } from "./recorrido.js";
 import { CONEXIONES, PUNTOS } from "./puntos.js";
 import { LOGROS } from "./logros.js";
 import { abrirTelefono, telefonoAbierto, alNarrar } from "./telefono.js";
+import { VOZ, claveVoz } from "./voz.js";
+import { CARTA, DESCUENTO_TERMO, DETALLE_REGALO, fmt } from "./datos.js";
 
 const $ = (id) => document.getElementById(id);
 const MOVIL = matchMedia("(max-width: 760px)").matches || /Mobi|Android|iPhone/i.test(navigator.userAgent);
@@ -147,7 +149,7 @@ const VISIBLES = {
   recogida: ["recogida", "bolsa", "origen", "carta", "arbol", "orgullo", "juegoSemana"],
   parche: ["tv", "agenda", "juegos", "microondas", "juegoSemana", "orgullo"],
   logros: ["orgullo", "juegoSemana", "tienda", ...PUNTOS.filter((p) => p.logro !== undefined).map((p) => p.id)],
-  avionEnt: ["agua", "division"],
+  avionEnt: ["division"],
   avion: ["biblioteca", "puestos"],
 };
 function armarPuntos() {
@@ -176,7 +178,7 @@ function armarPuntos() {
     if (!p) continue;
     crear(p.pos, p.mini ? "mini" : "info", `<span class="ico">${p.icono}</span>${p.mini ? "" : `<span class="txt">${p.etiqueta}</span>`}`, p.etiqueta, () => ejecutar(p.accion));
   }
-  crear([n.tino.pos[0], 1.55, n.tino.pos[1]], "tino", `<span class="ico">💬</span>`, "Habla con PolGreco", () => ejecutar({ tipo: "tino" }));
+  crear([n.tino.pos[0], 1.55, n.tino.pos[1]], "tino", `<span class="ico">💬</span>`, "Habla con Poligreca", () => ejecutar({ tipo: "tino" }));
 }
 function ubicarPuntos() {
   const w = innerWidth, h = innerHeight;
@@ -191,7 +193,7 @@ function ubicarPuntos() {
   }
 }
 
-// ------------------------------------------------------------------ guía: PolGreco habla
+// ------------------------------------------------------------------ guía: Poligreca habla
 const ui = { guia: $("guia"), titulo: $("paso-titulo"), texto: $("paso-texto"), num: $("paso-num"), accion: $("paso-accion"), atras: $("btn-atras"), sig: $("btn-siguiente"), puntos: $("puntos-paso"), avatar: $("avatar-img"), voz: $("btn-voz") };
 let vozActiva = (() => { try { return localStorage.getItem("cafepoli.voz") !== "no"; } catch { return true; } })();
 let vozElegida = null;
@@ -213,40 +215,111 @@ if ("speechSynthesis" in window) { elegirVoz(); speechSynthesis.onvoiceschanged 
 let bocaT = null;
 function boca(si, ms = 0) {
   clearInterval(bocaT);
-  if (!si) { ui.avatar.src = "assets/polgreco_a.png"; return; }
+  if (!si) { detenerAudio(); ui.avatar.src = "assets/poligreca_a.png"; return; }
   let abierta = false;
   const t0 = performance.now();
   bocaT = setInterval(() => {
     abierta = !abierta;
-    ui.avatar.src = abierta ? "assets/polgreco_b.png" : "assets/polgreco_a.png";
+    ui.avatar.src = abierta ? "assets/poligreca_b.png" : "assets/poligreca_a.png";
     if (ms && performance.now() - t0 > ms) boca(false);
   }, 160);
 }
 const paraVoz = (t) => t.replace(/(\d)\.(\d{3})/g, "$1$2").replace(/\$/g, "");
-function hablar(t) {
-  if (!t) return;
-  if ("speechSynthesis" in window) speechSynthesis.cancel();
-  if (!vozActiva || !vozElegida || !("speechSynthesis" in window)) { boca(true, Math.min(6000, t.length * 42)); return; }
+
+// Voz pregrabada de Poligreca (audio/*.mp3, ver js/voz.js). Un solo <audio> reutilizado (iOS lo desbloquea una vez, con el primer toque).
+const vozAudio = new Audio();
+vozAudio.preload = "auto";
+vozAudio.setAttribute("playsinline", "");
+let vozGen = 0, ctxAudio = null, analizador = null, datosAmp = null, rafBoca = 0, bocaAbierta = null;
+function pintarBoca(abierta) {
+  if (abierta === bocaAbierta) return;
+  bocaAbierta = abierta;
+  ui.avatar.src = abierta ? "assets/poligreca_b.png" : "assets/poligreca_a.png";
+}
+function detenerAudio() {
+  cancelAnimationFrame(rafBoca); rafBoca = 0; bocaAbierta = null;
+  try { vozAudio.pause(); } catch {}
+}
+// se llama dentro de un clic: desbloquea la reproducción (iOS/Android) y prepara el analizador de amplitud para mover la boca
+function desbloquearVoz() {
+  if (vozAudio.dataset.listo) return;
+  vozAudio.dataset.listo = "1";
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) {
+      ctxAudio = new AC();
+      const r = ctxAudio.resume();
+      const montar = () => {
+        if (ctxAudio.state !== "running" || analizador) return;
+        const fuente = ctxAudio.createMediaElementSource(vozAudio);
+        analizador = ctxAudio.createAnalyser(); analizador.fftSize = 512;
+        datosAmp = new Uint8Array(analizador.fftSize);
+        fuente.connect(analizador); analizador.connect(ctxAudio.destination);
+      };
+      if (r && r.then) r.then(montar, () => {}); else montar();
+    }
+  } catch { analizador = null; }
+  try { vozAudio.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA="; const p = vozAudio.play(); if (p) p.then(() => { if (vozAudio.src.startsWith("data:")) vozAudio.pause(); }, () => {}); } catch {}
+}
+function moverBoca(gen) {
+  if (gen !== vozGen || vozAudio.paused) return;
+  analizador.getByteTimeDomainData(datosAmp);
+  let s = 0;
+  for (let i = 0; i < datosAmp.length; i++) { const v = (datosAmp[i] - 128) / 128; s += v * v; }
+  pintarBoca(Math.sqrt(s / datosAmp.length) > 0.045);
+  rafBoca = requestAnimationFrame(() => moverBoca(gen));
+}
+function reproducirVoz(archivo, gen) {
+  vozAudio.onended = () => { if (gen === vozGen) boca(false); };
+  vozAudio.onerror = () => { if (gen === vozGen) { boca(false); hablarNavegador(ui.texto.textContent, gen); } };
+  vozAudio.src = archivo;
+  vozAudio.currentTime = 0;
+  const p = vozAudio.play();
+  const alEmpezar = () => {
+    if (gen !== vozGen) return;
+    if (analizador && ctxAudio.state === "running") moverBoca(gen);
+    else { clearInterval(bocaT); bocaT = setInterval(() => { if (vozAudio.paused) return; bocaAbierta = !bocaAbierta; ui.avatar.src = bocaAbierta ? "assets/poligreca_b.png" : "assets/poligreca_a.png"; }, 160); }
+  };
+  if (p && p.then) p.then(alEmpezar, () => { if (gen === vozGen) boca(true, 3000); }); else alEmpezar();
+}
+function precargarVoz(texto) {
+  const a = texto && VOZ[claveVoz(texto)];
+  if (a) fetch(a, { priority: "low" }).catch(() => {});
+}
+function hablarNavegador(t, gen) {
+  if (!vozElegida || !("speechSynthesis" in window)) { boca(true, Math.min(6000, t.length * 42)); return; }
   const u = new SpeechSynthesisUtterance(paraVoz(t));
   u.voice = vozElegida; u.lang = vozElegida.lang; u.rate = 1.02; u.pitch = 1.05;
-  u.onstart = () => boca(true);
-  u.onend = () => boca(false); u.onerror = () => boca(false);
+  u.onstart = () => { if (gen === vozGen) boca(true); };
+  u.onend = () => { if (gen === vozGen) boca(false); };
+  u.onerror = () => { if (gen === vozGen) boca(false); };
   speechSynthesis.speak(u);
 }
+function hablar(t) {
+  if (!t) return;
+  const gen = ++vozGen;
+  detenerAudio();
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+  if (!vozActiva) { boca(true, Math.min(6000, t.length * 42)); return; }
+  const archivo = VOZ[claveVoz(t)];
+  if (archivo) { clearInterval(bocaT); reproducirVoz(archivo, gen); return; }
+  hablarNavegador(t, gen);
+}
+document.addEventListener("visibilitychange", () => { if (document.hidden) { vozGen++; boca(false); speechSynthesis?.cancel(); } });
 function pintarVoz() { ui.voz.textContent = vozActiva ? "🔊" : "🔇"; ui.voz.classList.toggle("apagado", !vozActiva); }
 ui.voz.addEventListener("click", () => {
   vozActiva = !vozActiva;
   try { localStorage.setItem("cafepoli.voz", vozActiva ? "si" : "no"); } catch {}
   pintarVoz();
-  if (!vozActiva) { speechSynthesis?.cancel(); boca(false); } else if (!vozElegida) aviso("Tu navegador no tiene voz en español; PolGreco te habla por texto.");
+  if (!vozActiva) { speechSynthesis?.cancel(); boca(false); } else if (!vozElegida) aviso("Tu navegador no tiene voz en español; Poligreca te habla por texto.");
 });
 $("btn-repetir").addEventListener("click", () => hablar(ui.texto.textContent));
 
-// burbuja de PolGreco para explicaciones fuera del guion (puntos, app, fichas)
+// burbuja de Poligreca para explicaciones fuera del guion (puntos, app, fichas)
 function decir(titulo, texto, { conVoz = true } = {}) {
   ui.guia.classList.remove("oculto");
   ui.guia.classList.toggle("libre", modo === "libre");
-  ui.num.textContent = modo === "libre" ? "PolGreco te cuenta" : `Paso ${pasoActual + 1} de ${PASOS.length}`;
+  ui.num.textContent = modo === "libre" ? "Poligreca te cuenta" : `Paso ${pasoActual + 1} de ${PASOS.length}`;
   ui.titulo.textContent = titulo;
   ui.texto.textContent = texto;
   if (conVoz) hablar(texto);
@@ -278,6 +351,7 @@ function irPaso(i, { rapido = false, voz = true } = {}) {
   irANodo(p.nodo, { mira: p.mira, fov: p.fov, rapido });
   resaltar(p.foco);
   if (voz) hablar(p.texto);
+  if (voz && PASOS[pasoActual + 1]) precargarVoz(PASOS[pasoActual + 1].texto);
   pintarMapa();
 }
 function resaltar(id) {
@@ -292,7 +366,8 @@ function resaltar(id) {
 ui.sig.addEventListener("click", () => irPaso(pasoActual === PASOS.length - 1 ? 0 : pasoActual + 1));
 ui.atras.addEventListener("click", () => irPaso(pasoActual - 1));
 addEventListener("keydown", (e) => {
-  if (telefonoAbierto() || !$("ficha").classList.contains("oculto")) return;
+  if (e.key === "Escape" && !$("carta").classList.contains("oculto")) { cerrarCarta(); return; }
+  if (telefonoAbierto() || !$("ficha").classList.contains("oculto") || !$("carta").classList.contains("oculto")) return;
   if (modo === "guiado" && (e.key === "ArrowRight" || e.key === "PageDown")) irPaso(pasoActual + 1);
   else if (modo === "guiado" && (e.key === "ArrowLeft" || e.key === "PageUp")) irPaso(pasoActual - 1);
   else if (modo === "libre" && e.key === "ArrowLeft") vista.yaw -= 0.15;
@@ -315,35 +390,76 @@ $("modo-libre").addEventListener("click", () => ponerModo("libre"));
 
 // ------------------------------------------------------------------ acciones
 const FRASES_TINO = [
-  "¡Quiubo! Soy PolGreco, el primo cafetero de Polito. Vengo del Eje Cafetero y aquí te llamamos por tu nombre.",
+  "¡Quiubo! Soy Poligreca, la prima cafetera de Polito. Vengo del Eje Cafetero y aquí te llamamos por tu nombre.",
   "¿Un tinto? Vale 2.000 pesos, y si traes tu termo, 300 menos.",
   "En semana de parciales, la Zona Rendir es tu mejor aliada. Y el Café Parcial, uno por persona.",
   "En el descanso de la noche pide por la app y recoge sin fila.",
+  "¿No tomas café? Prueba la cata de tres tés o un chocolate santafereño con queso.",
 ];
 function ejecutar(a) {
   if (!a) return;
-  if (a.tipo === "app") { speechSynthesis?.cancel(); abrirTelefono(a.pantalla, () => { if (modo === "guiado") irPaso(pasoActual, { voz: false }); }); }
+  if (a.tipo === "app") { vozGen++; boca(false); speechSynthesis?.cancel(); abrirTelefono(a.pantalla, () => { vozGen++; boca(false); speechSynthesis?.cancel(); if (modo === "guiado") irPaso(pasoActual, { voz: false }); }); }
   else if (a.tipo === "tv") abrirTV();
   else if (a.tipo === "logro") abrirFicha(a.i);
   else if (a.tipo === "logros") abrirListaLogros();
+  else if (a.tipo === "carta") abrirCarta(a.tab);
   else if (a.tipo === "info") decir(a.titulo, a.texto);
-  else if (a.tipo === "tino") decir("PolGreco", FRASES_TINO[Math.floor(Math.random() * FRASES_TINO.length)]);
+  else if (a.tipo === "tino") decir("Poligreca", FRASES_TINO[Math.floor(Math.random() * FRASES_TINO.length)]);
   else if (a.tipo === "inicio") irPaso(0);
   else if (a.tipo === "libre") ponerModo("libre");
 }
 
-// la app del celular: PolGreco narra cada pantalla
+// la app del celular: Poligreca narra cada pantalla
 alNarrar((titulo, texto) => {
   ui.guia.classList.add("sobre-tel");
   decir(titulo, texto);
 });
+
+// ------------------------------------------------------------------ la carta por mundos de color
+const textoClaro = (hex) => { const n = parseInt(hex.slice(1), 16); return 0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255) > 135; };
+function qrMesa() {
+  let h = 2166136261, celdas = "";
+  for (let y = 0; y < 21; y++) for (let x = 0; x < 21; x++) {
+    const ojo = (x < 8 && y < 8) || (x > 12 && y < 8) || (x < 8 && y > 12);
+    h = Math.imul(h ^ (x * 31 + y), 16777619) >>> 0;
+    if (!ojo && (h & 8)) celdas += `<rect x="${x}" y="${y}" width="1" height="1"/>`;
+  }
+  const ojo = (x, y) => `<rect x="${x}" y="${y}" width="7" height="7"/><rect x="${x + 1}" y="${y + 1}" width="5" height="5" fill="#fff"/><rect x="${x + 2}" y="${y + 2}" width="3" height="3"/>`;
+  return `<svg viewBox="-2 -2 25 25" aria-hidden="true"><rect x="-2" y="-2" width="25" height="25" fill="#fff"/><g fill="#0F385A">${celdas}${ojo(0, 0)}${ojo(14, 0)}${ojo(0, 14)}</g></svg>`;
+}
+function pintarCarta(tab) {
+  document.querySelectorAll(".carta-tab").forEach((b) => { const si = b.dataset.tab === tab; b.classList.toggle("activo", si); b.setAttribute("aria-selected", String(si)); });
+  const mundos = CARTA.filter((c) => (c.tipo || "comidas") === tab).map((c) => `
+    <section class="carta-mundo" style="--cat:${c.color};--txt:${textoClaro(c.color) ? "#0F385A" : "#fff"}">
+      <header><h4>${c.cat}</h4>${c.lema ? `<p class="lema">${c.lema}</p>` : ""}</header>
+      <ul>${c.items.map((p) => `<li><span class="n">${p.nombre}${p.nota ? `<small>${p.nota}</small>` : ""}</span><span class="p">${fmt(p.precio)}${p.termo ? `<small>con tu termo ${fmt(p.precio - DESCUENTO_TERMO)}</small>` : ""}</span></li>`).join("")}</ul>
+      ${c.nota ? `<p class="nota">${c.nota}</p>` : ""}
+    </section>`);
+  if (tab === "comidas") mundos.push(`
+    <section class="carta-mundo" style="--cat:#E0006E;--txt:#fff">
+      <header><h4>Regala un Café Poli</h4><p class="lema">Desde la app, con tu mensaje y tu firma.</p></header>
+      <ul><li><span class="n">${DETALLE_REGALO.nombre}</span><span class="p">+${fmt(DETALLE_REGALO.precio)}</span></li></ul>
+    </section>`);
+  $("carta-grid").innerHTML = mundos.join("");
+  $("carta-grid").parentElement.scrollTop = 0;
+}
+function abrirCarta(tab = "bebidas") {
+  pintarCarta(tab);
+  if (!$("carta-qr").firstChild) $("carta-qr").innerHTML = qrMesa();
+  $("carta").classList.remove("oculto");
+  decir("La carta de Café Poli", "La carta va por mundos de color. En bebidas: cafés de origen, energía para el parcial, el ritual del té y las bebidas de la casa. En comidas: antojos colombianos, postres para compartir, combos y la Tienda. Un tinto vale 2.000 pesos y con tu termo, 300 menos.");
+}
+function cerrarCarta() { $("carta").classList.add("oculto"); speechSynthesis?.cancel(); boca(false); }
+document.querySelectorAll(".carta-tab").forEach((b) => b.addEventListener("click", () => pintarCarta(b.dataset.tab)));
+$("carta-cerrar").addEventListener("click", cerrarCarta);
+$("carta").addEventListener("click", (e) => { if (e.target === $("carta")) cerrarCarta(); });
 
 // ------------------------------------------------------------------ pantalla de cumpleaños
 function abrirTV() {
   $("tv").classList.remove("oculto");
   decir("La pantalla de cumpleaños", "Así se ve tu saludo de cumpleaños. Sales solo si nos das permiso, y con tu compra de ese día la galleta del colibrí va por nuestra cuenta.");
 }
-$("tv-cerrar").addEventListener("click", () => $("tv").classList.add("oculto"));
+$("tv-cerrar").addEventListener("click", () => { $("tv").classList.add("oculto"); vozGen++; boca(false); speechSynthesis?.cancel(); });
 
 // ------------------------------------------------------------------ fichas de logros reales
 let fichaActual = 0;
@@ -371,7 +487,7 @@ function abrirListaLogros() {
   $("lista-logros").classList.remove("oculto");
 }
 $("lista-cerrar").addEventListener("click", () => $("lista-logros").classList.add("oculto"));
-function cerrarModales() { ["ficha", "lista-logros", "tv"].forEach((id) => $(id).classList.add("oculto")); }
+function cerrarModales() { ["ficha", "lista-logros", "tv", "carta"].forEach((id) => $(id).classList.add("oculto")); }
 
 // ------------------------------------------------------------------ plano
 const ESC = 16.5, OX = 18, OY = 18 + 8.9 * 16.5;
@@ -438,8 +554,8 @@ async function iniciar() {
   const barra = $("carga-progreso"), txt = $("carga-texto");
   barra.style.width = "20%"; txt.textContent = "Preparando la primera vista…";
   await textura(PASOS[0].nodo);
-  barra.style.width = "70%"; txt.textContent = "Llamando a PolGreco…";
-  await Promise.all(["assets/polgreco_a.png", "assets/polgreco_b.png"].map((s) => new Promise((ok) => { const im = new Image(); im.onload = im.onerror = ok; im.src = s; })));
+  barra.style.width = "70%"; txt.textContent = "Llamando a Poligreca…";
+  await Promise.all(["assets/poligreca_a.png", "assets/poligreca_b.png"].map((s) => new Promise((ok) => { const im = new Image(); im.onload = im.onerror = ok; im.src = s; })));
   barra.style.width = "100%"; txt.textContent = "¡Listo!";
   $("btn-entrar").disabled = false;
   pintarVoz();
@@ -453,6 +569,7 @@ function entrar(i = 0) {
   irPaso(i, { rapido: true, voz: !params.has("captura") });
 }
 $("btn-entrar").addEventListener("click", () => {
+  desbloquearVoz();
   let g = 0;
   try { g = Number(localStorage.getItem("cafepoli.paso360") || 0); } catch {}
   if (g > 0 && g < PASOS.length) {
@@ -461,6 +578,6 @@ $("btn-entrar").addEventListener("click", () => {
     $("reanudar").classList.remove("oculto");
   } else entrar(0);
 });
-$("btn-seguir").addEventListener("click", () => { $("reanudar").classList.add("oculto"); let g = 0; try { g = Number(localStorage.getItem("cafepoli.paso360") || 0); } catch {} entrar(g); });
-$("btn-reiniciar").addEventListener("click", () => { $("reanudar").classList.add("oculto"); entrar(0); });
+$("btn-seguir").addEventListener("click", () => { desbloquearVoz(); $("reanudar").classList.add("oculto"); let g = 0; try { g = Number(localStorage.getItem("cafepoli.paso360") || 0); } catch {} entrar(g); });
+$("btn-reiniciar").addEventListener("click", () => { desbloquearVoz(); $("reanudar").classList.add("oculto"); entrar(0); });
 iniciar().catch((e) => { console.error(e); $("carga-texto").textContent = "No se pudo cargar el recorrido. Prueba con Chrome, Edge o Safari actualizados."; });
