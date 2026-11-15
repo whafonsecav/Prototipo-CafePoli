@@ -1,0 +1,53 @@
+/* Recorrido 360°: puntos, fichas, televisor y vista aérea */
+#escena { cursor: grab; }
+#escena:active { cursor: grabbing; }
+#capa-puntos { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+.punto { position: absolute; left: 0; top: 0; pointer-events: auto; border: 0; display: flex; align-items: center; gap: 6px; font-family: var(--f-texto); font-weight: 800; white-space: nowrap; transition: opacity .2s; }
+.punto.info, .punto.tino { background: rgba(255,255,255,.94); color: var(--navy); border-radius: 999px; padding: 6px 12px 6px 6px; box-shadow: 0 6px 18px rgba(0,0,0,.35); font-size: .82rem; }
+.punto .ico { width: 30px; height: 30px; border-radius: 50%; background: var(--oro); display: grid; place-items: center; font-size: 1rem; }
+.punto.tino { padding: 4px; }
+.punto.tino .ico { background: var(--magenta); }
+.punto.mini { background: transparent; padding: 0; }
+.punto.mini .ico { width: 26px; height: 26px; font-size: .85rem; background: rgba(251,175,23,.92); box-shadow: 0 0 0 3px rgba(255,255,255,.75), 0 4px 10px rgba(0,0,0,.35); }
+.punto.ir { background: rgba(15,56,90,.82); color: #fff; border-radius: 999px; padding: 8px 14px 8px 10px; font-size: .8rem; box-shadow: 0 6px 18px rgba(0,0,0,.4); backdrop-filter: blur(4px); }
+.punto.ir .flecha { width: 26px; height: 26px; border-radius: 50%; background: var(--cian); display: grid; place-items: center; color: var(--navy); }
+.punto:hover { filter: brightness(1.08); transform-origin: center; }
+.punto.foco .ico { animation: latido 1.1s ease-in-out infinite; }
+@keyframes latido { 0%, 100% { box-shadow: 0 0 0 0 rgba(224,0,110,.7); } 50% { box-shadow: 0 0 0 12px rgba(224,0,110,0); } }
+#aerea { position: fixed; inset: 0; z-index: 9; background: #0b1622; opacity: 0; pointer-events: none; transition: opacity .7s; display: grid; place-items: center; }
+#aerea.visible { opacity: 1; pointer-events: auto; }
+#aerea img { width: 100%; height: 100%; object-fit: cover; }
+#cargando { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 15; }
+.cargando-giro { display: block; width: 46px; height: 46px; border-radius: 50%; border: 5px solid rgba(255,255,255,.3); border-top-color: var(--oro); animation: gira .8s linear infinite; }
+#guia.libre .navegacion, #guia.libre .puntos-paso { display: none; }
+#guia.sobre-tel { z-index: 60; }
+@media (min-width: 900px) { #guia.sobre-tel { left: 16px; right: auto; max-width: 380px; margin: 0; } }
+@media (max-width: 899px) { #guia.sobre-tel { display: none; } }
+/* televisor */
+#tv { background: rgba(6,20,34,.85); grid-template-rows: 1fr auto; gap: 14px; }
+.tv-marco { width: min(1100px, 94vw); aspect-ratio: 16 / 9; background: #111; border-radius: 14px; padding: 12px; box-shadow: 0 30px 70px rgba(0,0,0,.6); align-self: center; }
+.tv-marco img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; display: block; }
+#tv .btn { justify-self: center; }
+/* fichas de logros */
+#ficha { background: rgba(6,20,34,.7); backdrop-filter: blur(3px); }
+.ficha-caja { width: min(520px, 100%); background: var(--crema); border-radius: 22px; padding: 22px 22px 16px; box-shadow: var(--sombra); border-top: 8px solid var(--oro); }
+.ficha-cab { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.ficha-cat { background: var(--navy); color: #fff; font-weight: 800; font-size: .78rem; padding: 4px 10px; border-radius: 999px; }
+.ficha-anio { font-family: var(--f-titulo); font-size: 1.6rem; color: var(--magenta); font-weight: 800; }
+.ficha-caja h3 { font-family: var(--f-titulo); color: var(--navy); font-size: 1.4rem; line-height: 1.15; margin: 8px 0 6px; }
+.ficha-caja p { margin: 0 0 10px; line-height: 1.45; }
+.ficha-fuente { font-size: .8rem; color: var(--suave); }
+.ficha-fuente a { color: var(--magenta); font-weight: 800; }
+.ficha-nav { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+.ficha-nav span { margin-right: auto; font-size: .82rem; color: var(--suave); font-weight: 700; }
+#lista-logros { background: rgba(6,20,34,.75); }
+.lista-caja { width: min(960px, 100%); max-height: calc(100vh - 40px); overflow-y: auto; background: var(--crema); border-radius: 22px; padding: 18px; box-shadow: var(--sombra); }
+.lista-cab { display: flex; justify-content: space-between; align-items: center; }
+.lista-cab h3 { font-family: var(--f-titulo); color: var(--navy); margin: 0; font-size: 1.4rem; }
+#lista-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 12px; }
+.tarjeta-logro { text-align: left; border: 0; background: #fff; border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 2px 8px rgba(15,56,90,.1); font-family: var(--f-texto); color: var(--texto); }
+.tarjeta-logro:hover { outline: 3px solid var(--oro); }
+.tarjeta-logro .cat { font-size: .7rem; font-weight: 800; color: var(--cian); text-transform: uppercase; letter-spacing: .03em; }
+.tarjeta-logro b { font-size: .9rem; line-height: 1.25; color: var(--navy); }
+.tarjeta-logro .anio { font-weight: 800; color: var(--magenta); font-size: .85rem; }
+@media (max-width: 640px) { .punto.info .txt, .punto.ir .txt { display: none; } .punto.info { padding: 4px; } .punto.ir { padding: 6px; } }

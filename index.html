@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Café Poli · Recorrido 360° · City Campus</title>
+  <meta name="description" content="Recorrido 360° fotorrealista de Café Poli en el segundo piso de City Campus del Politécnico Grancolombiano: Modo Conexión, Modo Avión, la barra, la app y la vitrina de logros. Somos origen. Somos Poli. Somos país.">
+  <meta name="author" content="William Fonseca">
+  <link rel="icon" href="assets/isotipo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="css/estilos.css">
+  <link rel="stylesheet" href="css/tour.css">
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <canvas id="escena" aria-label="Vista 360° de Café Poli"></canvas>
+  <div id="capa-puntos" aria-label="Puntos interactivos"></div>
+  <div id="aerea"><img src="panos/aerea.jpg" alt="Vista aérea de Café Poli en City Campus" loading="lazy"></div>
+  <div id="cargando" class="oculto"><span class="cargando-giro"></span></div>
+
+  <div id="carga" class="capa">
+    <div class="carga-caja">
+      <img src="assets/logo-vertical.svg" alt="Café Poli" class="carga-logo" onerror="this.style.display='none'">
+      <h1>Recorrido 360° · City Campus</h1>
+      <p class="carga-sub">Segundo piso del Politécnico Grancolombiano</p>
+      <div class="barra-carga"><span id="carga-progreso"></span></div>
+      <p id="carga-texto">Preparando el café…</p>
+      <button id="btn-entrar" class="btn btn-principal" disabled>Entrar con PolGreco</button>
+      <p class="nota-carga">Arrastra para mirar alrededor. Con voz en español si tu navegador la tiene. Funciona en computador y celular.</p>
+    </div>
+  </div>
+
+  <header id="barra-sup" class="oculto">
+    <div class="marca">
+      <img src="assets/isotipo.svg" alt="" onerror="this.style.display='none'">
+      <div><strong>Café Poli</strong><span>City Campus · piso 2</span></div>
+    </div>
+    <div class="modos" role="group" aria-label="Modo de recorrido">
+      <button id="modo-guiado" class="chip activo">Recorrido guiado</button>
+      <button id="modo-libre" class="chip">Explorar libre</button>
+    </div>
+    <div class="acciones">
+      <button id="btn-voz" class="icono" title="Voz" aria-label="Activar o silenciar la voz">🔊</button>
+      <button id="btn-mapa" class="icono" title="Plano" aria-label="Ver el plano">🗺️</button>
+      <button id="btn-app" class="icono" title="App Café Poli" aria-label="Abrir la app">📱</button>
+      <button id="btn-pantalla" class="icono" title="Pantalla completa" aria-label="Pantalla completa">⛶</button>
+    </div>
+  </header>
+
+  <section id="guia" class="oculto" aria-live="polite">
+    <div class="coli-avatar"><img id="avatar-img" src="assets/polgreco_a.png" alt="PolGreco, el primo cafetero de Polito, guía del recorrido"></div>
+    <div class="burbuja">
+      <div class="burbuja-cab"><span id="paso-num">Paso 1</span><button id="btn-repetir" class="enlace" aria-label="Repetir la voz">↻ Repetir</button></div>
+      <h2 id="paso-titulo">¡Hola!</h2>
+      <p id="paso-texto"></p>
+      <div id="paso-accion"></div>
+      <div class="navegacion">
+        <button id="btn-atras" class="btn btn-sec">← Atrás</button>
+        <div id="puntos-paso" class="puntos-paso"></div>
+        <button id="btn-siguiente" class="btn btn-principal">Siguiente →</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="mapa" class="oculto" role="dialog" aria-label="Plano del segundo piso">
+    <div class="mapa-cab"><strong>Plano · City Campus, piso 2</strong><button id="mapa-cerrar" class="icono" aria-label="Cerrar plano">✕</button></div>
+    <svg id="mapa-svg" viewBox="0 0 490 440"></svg>
+    <p class="mapa-nota">Toca un punto para ir allí. La parte rosada muestra hacia dónde miras.</p>
+  </div>
+
+  <div id="tv" class="capa oculto" role="dialog" aria-label="Pantalla de cumpleaños">
+    <div class="tv-marco"><img src="assets/tv_cumple.png" alt="Pantalla de cumpleaños de Café Poli"></div>
+    <button id="tv-cerrar" class="btn btn-sec">← Volver al recorrido</button>
+  </div>
+
+  <div id="ficha" class="capa oculto" role="dialog" aria-label="Ficha de logro">
+    <article class="ficha-caja">
+      <div class="ficha-cab"><span id="ficha-cat" class="ficha-cat"></span><span id="ficha-anio" class="ficha-anio"></span></div>
+      <h3 id="ficha-titulo"></h3>
+      <p id="ficha-texto"></p>
+      <p class="ficha-fuente">Fuente: <a id="ficha-fuente" href="#" target="_blank" rel="noopener"></a></p>
+      <div class="ficha-nav">
+        <button id="ficha-ant" class="btn btn-sec">←</button>
+        <span id="ficha-num"></span>
+        <button id="ficha-sig" class="btn btn-sec">→</button>
+        <button id="ficha-cerrar" class="btn btn-principal">Cerrar</button>
+      </div>
+    </article>
+  </div>
+
+  <div id="lista-logros" class="capa oculto" role="dialog" aria-label="Logros reales del Poli">
+    <div class="lista-caja">
+      <div class="lista-cab"><h3>Orgullo Poli · logros reales</h3><button id="lista-cerrar" class="icono" aria-label="Cerrar">✕</button></div>
+      <div id="lista-grid"></div>
+    </div>
+  </div>
+
+  <div id="reanudar" class="capa oculto" role="dialog">
+    <div class="carga-caja">
+      <img src="assets/polgreco_saluda.png" alt="PolGreco saluda" class="reanudar-coli" onerror="this.style.display='none'">
+      <h2>¡Volviste!</h2>
+      <p id="reanudar-texto">¿Seguimos donde ibas?</p>
+      <div class="fila-botones">
+        <button id="btn-seguir" class="btn btn-principal">Seguir donde iba</button>
+        <button id="btn-reiniciar" class="btn btn-sec">Empezar de nuevo</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="telefono-capa" class="capa oculto" role="dialog" aria-label="Simulación de la app Café Poli">
+    <div class="telefono">
+      <div class="telefono-notch"></div>
+      <div class="telefono-estado"><span id="tel-hora">7:24</span><span>📶 🔋</span></div>
+      <div id="telefono-pantalla" class="telefono-pantalla"></div>
+      <div class="telefono-home"></div>
+    </div>
+    <button id="telefono-cerrar" class="btn btn-sec cerrar-tel">Cerrar la app</button>
+  </div>
+
+  <div id="toast" class="oculto"></div>
+  <script type="module" src="js/tour360.js"></script>
+</body>
+</html>
