@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="css/carta.css">
   <link rel="stylesheet" href="css/recorrido2.css">
   <script type="importmap">
-  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }
   </script>
 </head>
 <body>
@@ -86,9 +86,13 @@
     <div class="lg-tv"><div class="lg-cuerpo"></div><span class="lg-sello">Poli TV · especial</span></div>
   </div>
   <div id="maqueta" class="escenario oculto" aria-label="Maqueta 3D de Café Poli">
-    <div id="maq-area" class="maq-area"><img id="maq-img" alt="Maqueta de Café Poli: arrástrala para girarla" draggable="false"></div>
-    <p id="maq-aviso" class="maq-aviso">↔ Arrastra para girar · ↕ arriba o de lado · pellizca o usa la rueda para acercar</p>
-    <div class="maq-botones"><button id="maq-lado" class="chip">De lado</button><button id="maq-arriba" class="chip">Desde arriba</button><button id="maq-girar" class="chip">⟳ Girar solo</button></div>
+    <div id="maq3d-area" class="maq3d-area">
+      <div id="maq3d-carga" class="maq3d-carga oculto"><p>Armando la maqueta 3D…</p><div class="barra-carga"><span id="maq3d-progreso"></span></div></div>
+      <p id="maq3d-aviso" class="maq-aviso oculto">Arrastra para girar · pellizca o usa la rueda para acercarte · dos dedos para mover · doble toque para ir a un punto</p>
+      <div class="maq3d-botones" role="group" aria-label="Vistas de la maqueta">
+        <button class="chip" data-vista="general">Todo</button><button class="chip" data-vista="conexion">Modo Conexión</button><button class="chip" data-vista="barra">Barra</button><button class="chip" data-vista="tienda">Tienda</button><button class="chip" data-vista="avion">Modo Avión</button><button class="chip" data-vista="rincon">Rincón Respira</button><button id="maq3d-girar" class="chip">⟳ Girar</button>
+      </div>
+    </div>
   </div>
   <div id="qrapp" class="escenario oculto" aria-label="Prueba la app de Café Poli">
     <div class="qa-caja">

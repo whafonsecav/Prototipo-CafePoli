@@ -109,9 +109,12 @@ async function irANodo(nombre, { mira = null, fov = null, rapido = false } = {})
     uni.tA.value = tex; uni.tB.value = tex; uni.mezcla.value = 0;
   } else {
     if (nodoActual && NODOS[nodoActual]) {
+      // antes de «caminar», la cámara vuelve a su zoom normal y gira con calma (más tiempo si el giro es grande)
       const hacia = angulosHacia(NODOS[nodoActual].pos, n.pos);
-      mirarA(hacia.yaw, -0.05, vista.fov, 450);
-      await espera(470);
+      const giro = Math.abs(difAng(vista.yaw, hacia.yaw)) + Math.abs(vista.pitch + 0.05) + Math.abs(vista.fov - FOV_BASE) / 60;
+      const ms = Math.round(Math.min(1500, 420 + giro * 520));
+      mirarA(hacia.yaw, -0.05, FOV_BASE, ms);
+      await espera(ms + 20);
       if (turno !== nodoTurno) return;
     }
     uni.tB.value = tex;
@@ -592,77 +595,22 @@ async function mostrarLogo(e) {
   if (e.expandir && !yaVisible && TVS[e.tv]) await crecerDesde(TVS[e.tv], el.querySelector(".lg-tv"), turno);
 }
 
-// ---- maqueta 3D: giro con la mano (cuadros renderizados alrededor del café, en dos alturas)
-const MAQ = { anillos: ["a35", "a60"], n: 48, anillo: 0, cuadro: 0, auto: true, escala: 1, imgs: {}, raf: 0, ultimo: 0, listo: false };
-const carpetaMaq = MOVIL ? "maqueta/m/" : "maqueta/";
-const srcMaq = (a, i) => `${carpetaMaq}${MAQ.anillos[a]}_${String(i).padStart(2, "0")}.jpg`;
+// ---- maqueta 3D en tiempo real (módulo aparte; se carga solo cuando se abre)
+let maqueta3d = null;
+const cargaMaqueta = () => (maqueta3d ||= import("./maqueta3d.js"));
+const archivoMaqueta = MOVIL ? "maqueta/cafe-m.glb" : "maqueta/cafe.glb";
+let maquetaPrecargada = false;
 function precargarMaqueta() {
-  if (MAQ.listo) return;
-  MAQ.listo = true;
-  const orden = [];
-  for (const salto of [12, 6, 3, 1]) for (let a = 0; a < 2; a++) for (let i = 0; i < MAQ.n; i += salto) orden.push([a, i]);
-  let k = 0;
-  const siguiente = () => {
-    if (k >= orden.length) return;
-    const [a, i] = orden[k++];
-    const key = `${a}_${i}`;
-    if (MAQ.imgs[key]) return siguiente();
-    const im = new Image();
-    im.onload = () => { MAQ.imgs[key] = im; siguiente(); };
-    im.onerror = () => siguiente();
-    im.src = srcMaq(a, i);
-  };
-  for (let h = 0; h < 4; h++) siguiente();
-}
-function cuadroMasCercano(a, i) {
-  for (let d = 0; d < MAQ.n; d++) for (const s of [i + d, i - d]) { const j = ((s % MAQ.n) + MAQ.n) % MAQ.n; if (MAQ.imgs[`${a}_${j}`]) return MAQ.imgs[`${a}_${j}`]; }
-  return null;
-}
-function pintarMaqueta() {
-  const im = cuadroMasCercano(MAQ.anillo, Math.round(MAQ.cuadro));
-  const img = $("maq-img");
-  if (im && img.src !== im.src) img.src = im.src;
-  img.style.transform = `scale(${MAQ.escala})`;
-}
-function cicloMaqueta(t) {
-  if ($("maqueta").classList.contains("oculto")) return;
-  if (MAQ.auto) MAQ.cuadro = (MAQ.cuadro + (t - (MAQ.ultimo || t)) * 0.006) % MAQ.n;
-  MAQ.ultimo = t;
-  pintarMaqueta();
-  MAQ.raf = requestAnimationFrame(cicloMaqueta);
+  if (maquetaPrecargada) return;
+  maquetaPrecargada = true;
+  cargaMaqueta().catch(() => {});
+  fetch(archivoMaqueta, { priority: "low" }).catch(() => {});
 }
 function mostrarMaqueta() {
-  precargarMaqueta();
   $("maqueta").classList.remove("oculto");
-  $("maq-aviso").classList.remove("oculto");
-  MAQ.auto = true; MAQ.ultimo = 0;
-  cancelAnimationFrame(MAQ.raf);
-  MAQ.raf = requestAnimationFrame(cicloMaqueta);
+  cargaMaqueta().then((m) => m.abrirMaqueta3D()).catch((e) => { console.warn(e); $("maq3d-carga").innerHTML = '<p>No se pudo abrir la maqueta 3D.</p>'; });
 }
-function detenerMaqueta() { cancelAnimationFrame(MAQ.raf); }
-(() => {
-  const area = $("maq-area");
-  let p = null, pinzaM = null;
-  area.addEventListener("pointerdown", (e) => { p = { x: e.clientX, y: e.clientY, dy: 0 }; area.setPointerCapture(e.pointerId); MAQ.auto = false; $("maq-aviso").classList.add("oculto"); });
-  area.addEventListener("pointermove", (e) => {
-    if (!p || pinzaM) return;
-    const dx = e.clientX - p.x;
-    MAQ.cuadro = (((MAQ.cuadro - dx * (MAQ.n / Math.max(320, area.clientWidth))) % MAQ.n) + MAQ.n) % MAQ.n;
-    p.dy += e.clientY - p.y;
-    if (p.dy > 40 && MAQ.anillo === 1) { MAQ.anillo = 0; p.dy = 0; }
-    if (p.dy < -40 && MAQ.anillo === 0) { MAQ.anillo = 1; p.dy = 0; }
-    p.x = e.clientX; p.y = e.clientY;
-  });
-  area.addEventListener("pointerup", () => { p = null; });
-  area.addEventListener("pointercancel", () => { p = null; });
-  area.addEventListener("wheel", (e) => { e.preventDefault(); MAQ.escala = THREE.MathUtils.clamp(MAQ.escala - e.deltaY * 0.0015, 1, 2.6); MAQ.auto = false; }, { passive: false });
-  area.addEventListener("touchstart", (e) => { if (e.touches.length === 2) { pinzaM = { d: Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY), s: MAQ.escala }; p = null; } }, { passive: true });
-  area.addEventListener("touchmove", (e) => { if (pinzaM && e.touches.length === 2) { const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); MAQ.escala = THREE.MathUtils.clamp(pinzaM.s * d / pinzaM.d, 1, 2.6); } }, { passive: true });
-  area.addEventListener("touchend", () => { pinzaM = null; });
-  $("maq-arriba").addEventListener("click", () => { MAQ.anillo = 1; MAQ.auto = false; });
-  $("maq-lado").addEventListener("click", () => { MAQ.anillo = 0; MAQ.auto = false; });
-  $("maq-girar").addEventListener("click", () => { MAQ.auto = !MAQ.auto; });
-})();
+function detenerMaqueta() { if (maqueta3d) maqueta3d.then((m) => m.cerrarMaqueta3D()).catch(() => {}); }
 
 // ------------------------------------------------------------------ recorrido guiado
 let pasoActual = 0, modo = "guiado", pasoGen = 0;
@@ -698,6 +646,9 @@ function irPaso(i, { rapido = false, voz = true } = {}) {
   cerrarEscenas(e ? e.tipo : null);
   ponerEscena(e ? e.tipo : null);
   const llegada = p.nodo ? irANodo(p.nodo, { mira: p.mira, fov: p.fov, rapido }) : Promise.resolve();
+  // si un paso anterior dejó la cámara muy cerca (televisor), vuelve con calma a su zoom normal
+  if (!p.mira && (!p.nodo || p.nodo === nodoActual) && !(e && (e.tipo === "tv" || e.tipo === "logo")) && vista.fov < FOV_BASE - 6) mirarA(vista.yaw, Math.min(vista.pitch, 0.2), FOV_BASE, 1100);
+  if (/^marca|^maqueta/.test(p.id)) precargarMaqueta();
   if (voz) hablar(p.texto, () => { if (gen === pasoGen) marcarListo(); });
   if (e) abrirEscenaPaso(e, gen, llegada);
   if (voz && PASOS[pasoActual + 1]) precargarVoz(PASOS[pasoActual + 1].texto);

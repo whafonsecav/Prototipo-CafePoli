@@ -69,10 +69,10 @@ export const PASOS = [
     texto: "Para los que no toman café, tranquilos, no los juzgo… mucho. El ritual del té tiene dieciséis tés e infusiones en hoja: negros como el Earl Grey, verde, jazmín, té blanco, rooibos, matcha, chai, frutales, aromáticas como manzanilla o jengibre con limón, y tés helados. Y para compartir, la cata de tres tés.",
     escena: { tipo: "carta", tab: "te" } },
   { id: "carta3", nodo: "barra", titulo: "Lo de la casa: sí, hay Milo",
-    texto: "Y las bebidas de la casa, las de toda la vida: Milo caliente y Milo frío, como en las onces del colegio, chocolate santafereño con queso, agua de panela con limón, aromática, avena y jugos naturales. Todo también por tamaño.",
+    texto: "Y las bebidas de la casa, las de toda la vida: Milo caliente y Milo frío, como en las onces del colegio, chocolate santafereño con queso, agua de panela con limón, aromática, avena y jugos naturales, todo por tamaño. Y si vas de afán, hay agua, gaseosa, malta y jugos fríos para llevar; esos vienen sellados, así que ahí no aplica lo del vaso.",
     escena: { tipo: "carta", tab: "casa" } },
   { id: "carta4", nodo: "barra", titulo: "Antojos recién horneados",
-    texto: "Para acompañar, antojos colombianos recién horneados: pan de bono, pan de yuca, buñuelo, almojábana, arepas, empanadas y un sándwich para el que viene con hambre de verdad.",
+    texto: "Para acompañar, antojos colombianos recién horneados: pan de bono, pan de yuca, buñuelo, almojábana, arepas, empanadas y un sándwich para el que viene con hambre de verdad. Y en la canasta de la vitrina, los de paquete de toda la vida: papas, platanitos, inflados de queso, galletas, maní y chocolatinas. Porque sí, entre clase y clase, el paquetico siempre cae bien.",
     escena: { tipo: "carta", tab: "comidas" } },
   { id: "carta5", nodo: "barra", titulo: "Postres para compartir",
     texto: "Y de la tarde a la noche, los postres para compartir: torta de zanahoria, cheesecake de frutos rojos, brownie y el postre para dos, con dos tenedores. Ojo, que el postre para dos no es para uno solo… bueno, no te voy a juzgar.",
@@ -121,7 +121,7 @@ export const PASOS = [
     texto: "Y como te registras con tu correo del Poli y tu fecha de cumpleaños, ese día la app te felicita y te invita a pasar por la galleta del colibrí. Eso sí, solo en días hábiles: si tu cumpleaños cae un domingo o un festivo, ese día no abrimos para consentirte… pero te queremos igual.",
     escena: { tipo: "app", guion: "cumple" } },
   { id: "appVaso", nodo: "barra", titulo: "Trae tu propio vaso",
-    texto: "Y este botón es el que más me gusta: trae tu propio vaso. Tu vaso o tu termo, el que quieras. Pagas por tamaño, ocho, doce o dieciséis onzas, y siempre trescientos pesos menos. Una de cada diez veces, además, te ganas un tinto. El planeta te lo agradece, y tu bolsillo también.",
+    texto: "Y este botón es el que más me gusta: trae tu propio vaso. Tu vaso o tu termo, el que quieras. Pagas por tamaño, ocho, doce o dieciséis onzas, y en las bebidas que preparamos siempre son trescientos pesos menos. Una de cada diez veces, además, te ganas un tinto. El planeta te lo agradece, y tu bolsillo también.",
     escena: { tipo: "app", guion: "vaso" } },
 
   // ---------------------------------------------------------------- Recogida y bolsa del final del día

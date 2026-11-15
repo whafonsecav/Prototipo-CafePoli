@@ -59,6 +59,16 @@ export const CARTA = [
     i("avena", "Avena fría", 3000, { ...B, oz: [12, 16] }),
     i("jugo", "Jugo natural en agua", 3500, { ...B, oz: [12, 16] }),
   ]},
+  { cat: "Bebidas frías para llevar", color: "#3A7CA5", tipo: "bebidas", icono: "botella", lema: "Para el que va de afán: frías y listas, en botella o en lata.", nota: "Vienen selladas: no aplica el descuento por traer tu vaso.", items: [
+    i("agua", "Agua sin gas (600 ml)", 2500),
+    i("aguaGas", "Agua con gas (600 ml)", 2800),
+    i("gaseosa", "Gaseosa (400 ml)", 3000),
+    i("gaseosaZero", "Gaseosa sin azúcar (400 ml)", 3000),
+    i("malta", "Malta (330 ml)", 2800),
+    i("jugoCaja", "Jugo en caja (200 ml)", 2000),
+    i("teBotella", "Té frío en botella (500 ml)", 3500),
+    i("hidratante", "Bebida hidratante (500 ml)", 3800),
+  ]},
   { cat: "Antojos colombianos", color: "#0F385A", tipo: "comidas", icono: "pan", lema: "Recién horneado y bien nuestro, del desayuno a la tarde.", items: [
     i("pan", "Pan de bono", 2000),
     i("panyuca", "Pan de yuca", 2000),
@@ -69,6 +79,16 @@ export const CARTA = [
     i("arepahuevo", "Arepa con huevo", 4000),
     i("empanada", "Empanada", 2500),
     i("sandwich", "Sándwich de jamón y queso", 6000),
+  ]},
+  { cat: "Snacks de paquete", color: "#D9822B", tipo: "comidas", icono: "paquete", lema: "Para el antojo entre clases: los de paquete de siempre.", nota: "Están en la canasta de la vitrina, junto a la caja.", items: [
+    i("papas", "Papas de paquete", 2500),
+    i("platanitos", "Platanitos", 2300),
+    i("inflados", "Inflados de queso", 2000),
+    i("galletasPaq", "Galletas de paquete", 1800),
+    i("mani", "Maní salado", 1800),
+    i("chocolatina", "Chocolatina", 1500),
+    i("barraCereal", "Barra de cereal", 2000),
+    i("gomitas", "Gomitas", 1800),
   ]},
   { cat: "Postres para compartir", color: "#15BECE", tipo: "comidas", icono: "torta", lema: "De la tarde a la noche: un postre, dos tenedores y la conversación.", items: [
     i("tortica", "Tortica del día", 3500),
@@ -84,7 +104,7 @@ export const CARTA = [
     i("desayuno", "Desayuno de la casa: café con leche + arepa con huevo", 6500, { ...B, cafe: true }),
     i("tardecata", "Tarde de cata: cata de tres tés + postre para dos", 13500),
   ]},
-  { cat: "Tienda Café Poli", color: "#5C6B7A", tipo: "comidas", icono: "vaso", lema: "Trae tu propio vaso: cualquier bebida, en cualquier tamaño, vale $300 menos.", nota: "Para tomar aquí te servimos en pocillo de porcelana. Además, productos oficiales del Poli en consignación: camisetas, chalecos, chaquetas, llaveros y peluches de Poligreca.", items: [
+  { cat: "Tienda Café Poli", color: "#5C6B7A", tipo: "comidas", icono: "vaso", lema: "Trae tu propio vaso: las bebidas preparadas, en cualquier tamaño, valen $300 menos.", nota: "Para tomar aquí te servimos en pocillo de porcelana. Además, productos oficiales del Poli en consignación: camisetas, chalecos, chaquetas, llaveros y peluches de Poligreca.", items: [
     i("vaso", "Vaso reutilizable Café Poli (8, 12 o 16 oz)", 12000, { nota: "8 oz $10.000 · 12 oz $12.000 · 16 oz $14.000" }),
     i("termo", "Termo Café Poli de acero (12 oz)", 28000),
     i("pocillo", "Pocillo de porcelana Café Poli (9 oz)", 18000),

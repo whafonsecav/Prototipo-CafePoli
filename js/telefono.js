@@ -273,6 +273,8 @@ const FOTO = {
   pausa: "☕", desayuno: "🍳", tardecata: "🫖", vaso: "🥤", termo: "🧉",
 };
 const foto = (id) => FOTO[id] || (/^te|infus|tisana/i.test(id) ? "🍵" : "☕");
+// foto real del producto (la misma de la app web); si faltara, queda la tarjeta de color
+const fotoProducto = (id) => `<div class="foto foto-real"><img src="app/img/carta/${id}.jpg" alt="" loading="lazy" onerror="this.parentNode.classList.add('sin-foto');this.remove()"></div>`;
 const nav = (activo) => `
   <nav class="nav-app">
     ${[["inicio", "🏠", "Inicio"], ["menu", "☕", "Pedir"], ["regalo", "🎁", "Regalar"], ["puntos", "⭐", "Puntos"]].map(([id, ic, t]) => `<button data-ir="${id}" class="${id === activo ? "activo" : ""}"><span>${ic}</span>${t}</button>`).join("")}
@@ -307,7 +309,7 @@ function lineaProducto(p) {
   if (t) {
     return `
       <div class="producto" data-prod="${p.id}">
-        <div class="foto">${foto(p.id)}</div>
+        ${fotoProducto(p.id)}
         <div style="flex:1;min-width:0">
           <div class="nombre">${p.nombre.replace(/ \(\d+\s?oz\)/, "")}</div>
           ${p.nota ? `<div class="termo">${p.nota}</div>` : ""}
@@ -318,7 +320,7 @@ function lineaProducto(p) {
   }
   return `
     <div class="producto" data-prod="${p.id}">
-      <div class="foto">${foto(p.id)}</div>
+      ${fotoProducto(p.id)}
       <div style="flex:1;min-width:0">
         <div class="nombre">${p.nombre}</div>
         <div class="precio">${fmt(p.precio)}</div>

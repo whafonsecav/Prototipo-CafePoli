@@ -1,0 +1,57 @@
+// Íconos propios de Café Poli: línea redondeada azul Poli con acentos magenta, cian y oro (sin emojis ni logos de terceros).
+// ico("pocillo") devuelve un <svg> en línea; el color de línea es currentColor y los acentos usan --ac y --ac2.
+const P = {
+  casa: '<path d="M3.5 11 12 4l8.5 7"/><path d="M5.5 9.5V20h13V9.5"/><path class="ac-s" d="M10 20v-5h4v5"/>',
+  pocillo: '<path d="M4 9h12v4a6 6 0 0 1-6 6h0a6 6 0 0 1-6-6z"/><path d="M16 10.5h1.5a2.6 2.6 0 0 1 0 5.2H15"/><path d="M3.5 21h13"/><path class="ac-s" d="M8 3.5c-.8 1 .8 2 0 3M12 3.5c-.8 1 .8 2 0 3"/>',
+  bolsa: '<path d="M5 8h14l-1.1 12.1a1 1 0 0 1-1 .9H7.1a1 1 0 0 1-1-.9z"/><path d="M9 8V6.6a3 3 0 0 1 6 0V8"/><path class="ac-s" d="M9.5 12.5c1.4 1.6 3.6 1.6 5 0"/>',
+  regalo: '<rect x="3.5" y="8" width="17" height="4" rx="1"/><path d="M5 12v7.5a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5V12"/><path d="M12 8v12"/><path class="ac-s" d="M12 8C10.6 5 7 4.6 7 6.6 7 8.2 10.2 8 12 8zm0 0c1.4-3 5-3.4 5-1.4C17 8.2 13.8 8 12 8z"/>',
+  colibri: '<path d="M13.2 9.6c-3.1.3-5.6 2.7-5.9 5.8L5 20.5l4.1-1.7c3.3-.5 5.6-3.1 5.3-6.4"/><path d="M14.6 10.4l6.4-1.3"/><path class="ac-s" d="M12.6 9.4C11.1 6.4 9 4.4 6 3.5c1 3 2.8 5.1 5.5 6.4"/><path class="ac2-s" d="M13.7 9.5c.2-2.6 1.4-4.8 3.5-6.5.3 2.7-.6 5-2.5 6.9"/><circle class="ac-f" cx="13.9" cy="11.1" r=".9"/>',
+  perfil: '<circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.8-3.6 3.6-5.6 7-5.6s6.2 2 7 5.6"/>',
+  vaso: '<path d="M7 8h10l-1.3 12.1a1 1 0 0 1-1 .9H9.3a1 1 0 0 1-1-.9z"/><path d="M6 5h12v3H6z"/><path d="M9.5 5l.5-2h4l.5 2"/><path class="ac-s" d="M7.5 12h9M7.9 16h8.2"/>',
+  termo: '<rect x="8" y="6.5" width="8" height="14.5" rx="2.6"/><path d="M9 3h6v3.5H9z"/><path class="ac-s" d="M8 11.5h8"/>',
+  reloj: '<circle cx="12" cy="12" r="8.2"/><path class="ac-s" d="M12 7.5V12l3 2"/>',
+  ubicacion: '<path d="M12 21s-6.2-5.7-6.2-11.1a6.2 6.2 0 0 1 12.4 0C18.2 15.3 12 21 12 21z"/><circle class="ac-f" cx="12" cy="10" r="2.2"/>',
+  bolsaDia: '<path d="M6 8.5h12l.9 11.6a.8.8 0 0 1-.8.9H5.9a.8.8 0 0 1-.8-.9z"/><path d="M8.5 8.5 9.6 5h4.8l1.1 3.5"/><path class="ac-s" d="M9.2 13.5c1.6 1.7 4 1.7 5.6 0"/><circle class="ac-f" cx="17.5" cy="5" r="1.6"/>',
+  rayo: '<path class="ac-fs" d="M13 2.8 5.2 13.4h5.6L10 21.2l7.8-10.6h-5.6z"/>',
+  tetera: '<path d="M5 11h11v2.8a5.2 5.2 0 0 1-5.2 5.2h-.6A5.2 5.2 0 0 1 5 13.8z"/><path d="M16 12.4l3.2-2.4v4.3"/><path d="M8.3 11V9.6a2.2 2.2 0 0 1 4.4 0V11"/><path d="M4 21h13"/><circle class="ac-f" cx="10.5" cy="6.4" r="1.1"/>',
+  chocolatera: '<path d="M6 9h10v6.8a4.2 4.2 0 0 1-4.2 4.2h-1.6A4.2 4.2 0 0 1 6 15.8z"/><path d="M16 11h1.8a2.2 2.2 0 0 1 0 4.4H16"/><path d="M5 9h12"/><path class="ac-s" d="M8.4 5.8c.5-1 1.6-1 2.1 0s1.6 1 2.1 0"/>',
+  botella: '<path d="M10 2.8h4v3l1.6 2.6v11.4a1.2 1.2 0 0 1-1.2 1.2H9.6a1.2 1.2 0 0 1-1.2-1.2V8.4L10 5.8z"/><path class="ac-s" d="M8.4 12h7.2M8.4 16h7.2"/>',
+  pan: '<path d="M3.8 14a8.2 5.6 0 0 1 16.4 0v2.4a2 2 0 0 1-2 2H5.8a2 2 0 0 1-2-2z"/><path class="ac-s" d="M8.4 11.8l1 2.1M12 11v2.4M15.6 11.8l-1 2.1"/>',
+  torta: '<path d="M4 20.5h16"/><path d="M5.2 20.5v-6.3h13.6v6.3"/><path d="M5.2 14.2c1.1 1 2.3 1 3.4 0s2.3-1 3.4 0 2.3 1 3.4 0 2.3-1 3.4 0"/><path d="M12 14.2V10"/><path class="ac-f" d="M12 4.4c1.1 1.3 1.1 2.5 0 3.3-1.1-.8-1.1-2 0-3.3z"/>',
+  combo: '<path d="M3 9.5h8.6v3.4a4.3 4.3 0 0 1-4.3 4.3h0A4.3 4.3 0 0 1 3 12.9z"/><path d="M11.6 10.6h.9a1.8 1.8 0 0 1 0 3.6h-1"/><path class="ac-s" d="M13.4 19.6a4.4 3.2 0 0 1 8.4-1.2v1.3a.9.9 0 0 1-.9.9h-6.6a.9.9 0 0 1-.9-.9z"/><path d="M5.4 6.2c-.5.7.5 1.3 0 2M8.2 6.2c-.5.7.5 1.3 0 2"/>',
+  buscar: '<circle cx="11" cy="11" r="6.6"/><path class="ac-s" d="m16 16 4.3 4.3"/>',
+  mas: '<path d="M12 5v14M5 12h14"/>',
+  menos: '<path d="M5 12h14"/>',
+  cerrar: '<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
+  check: '<path d="m5 12.6 4.4 4.4L19 7.6"/>',
+  checkCirculo: '<circle cx="12" cy="12" r="8.6"/><path class="ac-s" d="m8 12.4 2.8 2.8L16.2 9.6"/>',
+  alerta: '<path d="M12 4 21 19.5H3z"/><path class="ac-s" d="M12 10v4.2"/><circle class="ac-f" cx="12" cy="16.9" r="1"/>',
+  compartir: '<path d="M12 15V3.6M8 7.6l4-4 4 4"/><path d="M5 12v7.2a.8.8 0 0 0 .8.8h12.4a.8.8 0 0 0 .8-.8V12"/>',
+  descargar: '<path d="M12 3.6V15M8 11l4 4 4-4"/><path class="ac-s" d="M5 19.6h14"/>',
+  chat: '<path d="M4.4 19.6l1.3-3.8a7.6 7.6 0 1 1 3.1 3z"/><path class="ac-s" d="M9 10.6h6M9 13.6h4"/>',
+  copiar: '<rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5"/>',
+  qr: '<path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4z"/><path class="ac-s" d="M14 14h2.5v2.5H14zM17.5 17.5H20V20h-2.5zM14 20h1M20 14v1"/>',
+  tarjeta: '<rect x="3" y="6" width="18" height="12" rx="2.2"/><path d="M3 10h18"/><path class="ac-s" d="M6.5 14.6h4.5"/>',
+  celular: '<rect x="7" y="2.8" width="10" height="18.4" rx="2.4"/><path d="M10.5 18h3"/><path class="ac-s" d="m9.6 10.6 1.7 1.7 3.2-3.4"/>',
+  transferencia: '<path d="M4 8.5h14.5l-3.2-3.2"/><path class="ac-s" d="M20 15.5H5.5l3.2 3.2"/>',
+  hoja: '<path d="M5 19.5C5 11 10 6 19.5 4.6 18.6 13.7 13.5 19.5 5 19.5z"/><path class="ac-s" d="M5 19.5 13.2 11.2"/>',
+  sol: '<circle cx="12" cy="12" r="4"/><path class="ac-s" d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/>',
+  luna: '<path d="M19.5 14.6A7.6 7.6 0 0 1 9.4 4.5a7.6 7.6 0 1 0 10.1 10.1z"/><circle class="ac-f" cx="17" cy="6" r="1"/>',
+  sobre: '<rect x="3.5" y="6" width="17" height="12" rx="1.8"/><path d="m4 7 8 6.2L20 7"/><path class="ac-f" d="M12 17.6s-2.6-1.6-2.6-3.4a1.3 1.3 0 0 1 2.6-.6 1.3 1.3 0 0 1 2.6.6c0 1.8-2.6 3.4-2.6 3.4z"/>',
+  corazon: '<path class="ac-fs" d="M12 20s-7.4-4.6-7.4-10A4.1 4.1 0 0 1 12 7.8a4.1 4.1 0 0 1 7.4 2.2c0 5.4-7.4 10-7.4 10z"/>',
+  flecha: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  atras: '<path d="M19 12H5M11 6l-6 6 6 6"/>',
+  estrella: '<path class="ac-fs" d="m12 3.8 2.5 5 5.5.8-4 3.9.9 5.5-4.9-2.6-4.9 2.6.9-5.5-4-3.9 5.5-.8z"/>',
+  calendario: '<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><circle class="ac-f" cx="12" cy="14.5" r="1.6"/>',
+  ajustes: '<circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/>',
+  barista: '<circle cx="12" cy="7.5" r="3.4"/><path d="M5.5 20.5c.6-4 3.2-6.4 6.5-6.4s5.9 2.4 6.5 6.4"/><path class="ac-s" d="M9.5 14.6 12 18l2.5-3.4"/>',
+  info: '<circle cx="12" cy="12" r="8.6"/><path class="ac-s" d="M12 11v5.2"/><circle class="ac-f" cx="12" cy="8" r="1.1"/>',
+  paquete: '<path d="M6.5 3.5h11l-.9 2.2.9 2.2v10.2l.9 2.4h-12.8l.9-2.4V7.9l-.9-2.2z"/><path d="M6.6 7.9h10.8M6.6 18.1h10.8"/><circle class="ac-f" cx="10.3" cy="12.4" r="1.3"/><circle class="ac2-f" cx="13.8" cy="13.6" r="1.1"/>',
+  confeti: '<path d="M4 20 8.5 8.5l7 7z"/><path class="ac-s" d="M14 4.5v2M18.5 7.5l-1.4 1.4M19.5 13h-2M11 6.2l1 1"/><circle class="ac-f" cx="17.6" cy="3.8" r="1"/>',
+};
+// mundo de la carta → ícono
+export const ICONO_MUNDO = { taza: "pocillo", rayo: "rayo", tetera: "tetera", olla: "chocolatera", botella: "botella", pan: "pan", torta: "torta", combo: "combo", vaso: "vaso", paquete: "paquete" };
+export function ico(nombre, clase = "") {
+  const d = P[nombre] || P.pocillo;
+  return `<svg class="ico ${clase}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${d}</svg>`;
+}

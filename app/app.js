@@ -2,6 +2,7 @@
 // recorrido y del Excel), el inventario se simula por día y hora, los pagos son simulaciones y nada sale del aparato.
 import { CARTA, DESCUENTO_TERMO, DETALLE_REGALO, VASOS, fmt } from "../js/datos.js";
 import { tipoDeDia } from "./festivos.js";
+import { ico, ICONO_MUNDO } from "./iconos.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -28,35 +29,51 @@ function ahora() {
   if (D.demo) {
     [a, m, d] = D.demo.fecha.split("-").map(Number);
     const [hh, mm] = D.demo.hora.split(":").map(Number);
-    min = hh * 60 + mm + Math.floor((Date.now() - D.demo.desde) / 60000);
-    if (min >= 1440) min = 1439;
+    min = Math.min(1439, hh * 60 + mm + Math.floor((Date.now() - D.demo.desde) / 60000));
   } else {
     const p = Object.fromEntries(fmtBogota.formatToParts(new Date()).map((x) => [x.type, x.value]));
     a = +p.year; m = +p.month; d = +p.day; min = (+p.hour % 24) * 60 + +p.minute;
   }
   const fecha = `${a}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-  const dia = tipoDeDia(a, m, d);
-  const ds = new Date(Date.UTC(a, m - 1, d)).getUTCDay();
-  return { a, m, d, min, fecha, dia, ds };
+  return { a, m, d, min, fecha, dia: tipoDeDia(a, m, d), ds: new Date(Date.UTC(a, m - 1, d)).getUTCDay() };
 }
 const hhmm = (min) => { const h = Math.floor(min / 60) % 24, mm = min % 60, h12 = ((h + 11) % 12) + 1; return `${h12}:${String(mm).padStart(2, "0")} ${h < 12 ? "a. m." : "p. m."}`; };
 const fechaLarga = (t) => `${DIAS[t.ds]} ${t.d} de ${MESES[t.m - 1]} de ${t.a}`;
 const ABRE = 6 * 60, CIERRA = 21 * 60 + 45, BOLSA_DESDE = 20 * 60 + 30, BOLSA_HASTA = 21 * 60 + 30;
 function abierto(t = ahora()) { return t.dia.habil && t.min >= ABRE && t.min < CIERRA; }
 
-// ------------------------------------------------------------------ carta e inventario simulado
-const PRODUCTOS = CARTA.flatMap((c) => c.items.map((p) => ({ ...p, mundo: c.cat, color: c.color, tipo: c.tipo })));
-const porId = (id) => PRODUCTOS.find((p) => p.id === id);
+// ------------------------------------------------------------------ carta, descripciones e inventario simulado
+const PRODUCTOS = CARTA.flatMap((c, i) => c.items.map((p) => ({ ...p, mundo: c.cat, mundoI: i, color: c.color, icono: ICONO_MUNDO[c.icono] || "pocillo" })));
+const porId = (id) => PRODUCTOS.find((p) => p.id === id) || { id, nombre: id, precio: 0, icono: "pocillo", color: "#0F385A" };
 const tamanosDe = (p) => (p.id === "vaso" ? VASOS : p.tamanos || null);
 const precio = (id, oz) => { const p = porId(id); const t = tamanosDe(p); if (t && oz) { const s = t.find((x) => String(x.oz) === String(oz)); if (s) return s.precio; } return t ? t[0].precio : p.precio; };
 const nombreCorto = (p) => p.nombre.split(":")[0].replace(/ \(.*\)/, "");
 const conOz = (id, oz) => `${nombreCorto(porId(id))}${oz ? ` · ${oz} oz` : ""}`;
-// unidades que hornea o recibe la barra cada día; las bebidas se preparan al momento
+const CORTO = { "Cafés de origen": "Cafés", "Energía para el parcial": "Energía", "Ritual del té": "Té", "Bebidas de la casa": "De la casa", "Bebidas frías para llevar": "Frías", "Snacks de paquete": "Snacks", "Antojos colombianos": "Antojos", "Postres para compartir": "Postres", Combos: "Combos", "Tienda Café Poli": "Tienda" };
+// una línea por producto, para saber qué es sin leer de más
+const DESC = {
+  tinto: "Café de origen en greca, como en la casa.", campesino: "Tinto endulzado con panela, receta de finca.", leche: "Café de origen con leche espumada.", capu: "Espresso doble con espuma cremosa.", latte: "Espresso con leche y arequipe o vainilla.", frio: "Café de origen frío, con panela y hielo.",
+  parcial: "Doble espresso, panela y canela. Uno por persona.", espresso: "Dos cargas de café de origen.", cparcial: "Café Parcial con brownie, para la semana de parciales.",
+  teNegro: "Té negro clásico, con o sin leche.", earlgrey: "Té negro con aroma de bergamota.", teVerde: "Té verde suave, en hoja.", jazmin: "Té verde perfumado con flores de jazmín.", blanco: "Té blanco delicado con pétalos.", rooibos: "Sin cafeína, con notas de vainilla.", frutos: "Infusión frutal, sin cafeína.", maracuya: "Frutal tropical, sin cafeína.", manzanilla: "Calma la tarde; con miel.", jengibre: "Para los días fríos de Bogotá.", jamaica: "Ácida y refrescante, con canela.", chai: "Té con especias y leche espumada.", matcha: "Té verde japonés con leche.", teHelado: "Té negro frío con durazno.", teMaracuya: "Té verde frío con maracuyá.", cata: "Tres tazas pequeñas para probar y conversar.",
+  aroma: "Hierbabuena o limoncillo, la de siempre.", panela: "Caliente o fría, con limón.", choco: "Con queso para derretir adentro.", milo: "Caliente y espumoso, como en las onces.", miloFrio: "Frío y batido, el clásico del colegio.", avena: "Avena fría con canela.", jugo: "Fruta del día, en agua.",
+  agua: "Botella sellada, fría.", aguaGas: "Burbujas, sin azúcar.", gaseosa: "Lata o botella fría.", gaseosaZero: "Sin azúcar, fría.", malta: "Malta fría, la de toda la vida.", jugoCaja: "Jugo de fruta en caja.", teBotella: "Té frío listo para llevar.", hidratante: "Para después del partido.",
+  papas: "Papas fritas de paquete.", platanitos: "Plátano verde frito y crocante.", inflados: "Inflados con sabor a queso.", galletasPaq: "Galletas de paquete para la maleta.", mani: "Maní salado, energía rápida.", chocolatina: "Chocolatina para el antojo.", barraCereal: "Avena y miel, para la clase.", gomitas: "Gomitas de fruta.",
+  pan: "Recién horneado en la mañana.", panyuca: "Crujiente por fuera, suave por dentro.", bunuelo: "Redondo y dorado, de queso.", almojabana: "Esponjosa, de cuajada.", arepa: "Asada con queso derretido.", boyacense: "Dulce, rellena de cuajada.", arepahuevo: "Frita, con huevo adentro.", empanada: "De carne o pollo, con ají.", sandwich: "Pan, jamón y queso calientes.",
+  tortica: "La torta que horneamos hoy.", zanahoria: "Con nueces y cubierta de queso crema.", cheesecake: "Cremoso, con salsa de frutos rojos.", brownie: "De chocolate, denso y húmedo.", galletas: "Horneadas en casa.", postre2: "Dos porciones y dos tenedores.", fruta: "Fruta fresca picada.",
+  pausa: "Tinto con pan de bono: la pausa perfecta.", desayuno: "Café con leche y arepa con huevo.", tardecata: "Cata de tres tés y postre para dos.",
+  vaso: "Reutilizable: 8, 12 o 16 oz.", termo: "Acero; mantiene el tinto caliente por horas.", pocillo: "Porcelana con el logo de Café Poli.",
+};
+// unidades del día (lo horneado, lo empacado y la tienda); las bebidas preparadas se hacen al momento
 const STOCK = { pan: 60, panyuca: 45, bunuelo: 50, almojabana: 40, arepa: 35, boyacense: 18, arepahuevo: 24, empanada: 40, sandwich: 16,
-  tortica: 16, zanahoria: 14, cheesecake: 12, brownie: 26, galletas: 40, postre2: 8, fruta: 14, vaso: 20, termo: 9, pocillo: 12 };
+  tortica: 16, zanahoria: 14, cheesecake: 12, brownie: 26, galletas: 40, postre2: 8, fruta: 14,
+  agua: 48, aguaGas: 24, gaseosa: 48, gaseosaZero: 30, malta: 24, jugoCaja: 36, teBotella: 20, hidratante: 20,
+  papas: 30, platanitos: 24, inflados: 24, galletasPaq: 30, mani: 20, chocolatina: 40, barraCereal: 24, gomitas: 20,
+  vaso: 20, termo: 9, pocillo: 12 };
 const COMBO = { pausa: "pan", desayuno: "arepahuevo", cparcial: "brownie", tardecata: "postre2" };
 const TIENDA = new Set(["vaso", "termo", "pocillo"]);
-// parte de lo horneado que ya se vendió a cada hora (picos entre clases y antes de las 6:40 p. m.)
+const EMPACADO = new Set(["agua", "aguaGas", "gaseosa", "gaseosaZero", "malta", "jugoCaja", "teBotella", "hidratante", "papas", "platanitos", "inflados", "galletasPaq", "mani", "chocolatina", "barraCereal", "gomitas"]);
+const DEL_DIA = Object.keys(STOCK).filter((id) => !TIENDA.has(id) && !EMPACADO.has(id)); // solo esto va en la bolsa del final del día
+// parte de lo del día que ya se vendió a cada hora (picos entre clases y antes de las 6:40 p. m.)
 const CURVA = [[360, 0], [540, .24], [720, .45], [840, .58], [1020, .7], [1120, .86], [1230, .93], [1305, .97]];
 function curva(min) {
   if (min <= CURVA[0][0]) return 0;
@@ -68,8 +85,9 @@ function stock(id, t = ahora()) {
   if (COMBO[id]) return stock(COMBO[id], t);
   if (!(id in STOCK)) return Infinity;
   const compradas = (D.compras[t.fecha] || {})[id] || 0;
-  if (TIENDA.has(id) || !t.dia.habil) return Math.max(0, STOCK[id] - compradas); // día no hábil: se hornea para el próximo día hábil
-  const factor = 0.9 + azar(id + t.fecha) * 0.2;
+  if (TIENDA.has(id) || !t.dia.habil) return Math.max(0, STOCK[id] - compradas); // día no hábil: se prepara para el próximo día hábil
+  const ritmo = EMPACADO.has(id) ? 0.55 : 1; // lo empacado se vende más despacio y no se daña
+  const factor = (0.9 + azar(id + t.fecha) * 0.2) * ritmo;
   const vendidas = Math.round(STOCK[id] * Math.min(1, curva(t.min) * factor));
   return Math.max(0, STOCK[id] - vendidas - compradas);
 }
@@ -82,12 +100,15 @@ function descontar(id, n, t = ahora()) {
 function etiquetaStock(id) {
   const t = ahora();
   const s = stock(id, t);
-  if (s === Infinity) return abierto(t) ? ["Disponible", ""] : ["Se prepara al abrir", "pocos"];
-  if (!t.dia.habil && !TIENDA.has(COMBO[id] || id)) return ["Para el próximo día hábil", "pocos"];
+  if (s === Infinity) return abierto(t) ? ["Al momento", ""] : ["Al abrir", "pocos"];
+  if (!t.dia.habil && !TIENDA.has(COMBO[id] || id)) return ["Próximo día hábil", "pocos"];
   if (s <= 0) return ["Agotado", "no"];
-  if (s <= 8) return [`Quedan ${s}`, "pocos"];
-  return ["Disponible", ""];
+  return [`Quedan ${s}`, s <= 8 ? "pocos" : ""];
 }
+// color de texto sobre el color de cada mundo: azul Poli sobre los claros (té, de la casa, postres), blanco sobre los oscuros
+const claro = (hex) => { const n = parseInt(hex.slice(1), 16); return 0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255) > 150; };
+const estiloCat = (hex) => `--cat:${hex};--tx:${claro(hex) ? "#0F385A" : "#fff"}`;
+const foto = (p, clase = "", extra = "") => `<div class="foto ${clase}" style="${estiloCat(p.color)}">${ico(p.icono)}<img src="img/carta/${p.id}.jpg" alt="" loading="lazy" decoding="async" onerror="this.remove()">${extra}</div>`;
 
 // ------------------------------------------------------------------ utilidades de interfaz
 let avisoT = 0;
@@ -115,15 +136,16 @@ function qrSVG(texto, tam = 170) {
   for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (q.isDark(y, x)) r += `M${x},${y}h1v1h-1z`;
   return `<svg viewBox="-2 -2 ${n + 4} ${n + 4}" width="${tam}" height="${tam}" shape-rendering="crispEdges" role="img" aria-label="Código QR"><rect x="-2" y="-2" width="${n + 4}" height="${n + 4}" fill="#fff"/><path d="${r}" fill="#0F385A"/></svg>`;
 }
+const fichaIco = (nombre, tono = "navy") => `<span class="ficha-ico ${tono}">${ico(nombre)}</span>`;
 
 // ------------------------------------------------------------------ pagos simulados (nunca se piden datos reales)
 const METODOS = {
-  Nequi: { color: "#4b1b6e", ini: "N", tipo: "app" },
-  Daviplata: { color: "#c8102e", ini: "D", tipo: "app" },
-  "Bre-B": { color: "#0F385A", ini: "B", tipo: "llave" },
-  Tarjeta: { color: "#174B76", ini: "💳", tipo: "tarjeta" },
+  Nequi: { color: "#5A2D82", icono: "celular", tipo: "app", txt: "Nequi" },
+  Daviplata: { color: "#C8102E", icono: "celular", tipo: "app", txt: "Daviplata" },
+  "Bre-B": { color: "#0F385A", icono: "transferencia", tipo: "llave", txt: "Bre-B" },
+  Tarjeta: { color: "#174B76", icono: "tarjeta", tipo: "tarjeta", txt: "Tarjeta crédito o débito" },
 };
-const logoPago = (m, tam = "") => `<span class="logo-pago ${tam}" style="background:${METODOS[m].color}">${METODOS[m].ini}</span>`;
+const logoPago = (m) => `<span class="logo-pago" style="background:${METODOS[m].color}">${ico(METODOS[m].icono)}</span>`;
 function pagar(monto, concepto) {
   return new Promise((resolver) => {
     let fin = false, reloj = 0;
@@ -133,8 +155,8 @@ function pagar(monto, concepto) {
         <span class="sello-sim">Simulación: no se cobra nada</span>
         <h2 style="margin-top:4px">¿Cómo pagas ${fmt(monto)}?</h2>
         <p class="sub">${esc(concepto)}</p>
-        <div class="metodos">${Object.keys(METODOS).map((m) => `<button class="metodo ${m === D.pago ? "activa" : ""}" data-m="${m}">${logoPago(m)}${m === "Tarjeta" ? "Tarjeta crédito o débito" : m}</button>`).join("")}</div>
-        <button class="btn ancho" id="pg-seguir">Continuar</button>
+        <div class="metodos">${Object.keys(METODOS).map((m) => `<button class="metodo ${m === D.pago ? "activa" : ""}" data-m="${m}">${logoPago(m)}<span>${METODOS[m].txt}</span></button>`).join("")}</div>
+        <button class="btn ancho" id="pg-seguir">Continuar ${ico("flecha")}</button>
         <button class="btn sec ancho" id="pg-cancelar" style="margin-top:8px">Cancelar</button>`, { alCerrar: (v) => { if (v === null) terminar(false); } });
       $$(".metodo", hojaCaja).forEach((b) => b.addEventListener("click", () => { D.pago = b.dataset.m; guardar(); $$(".metodo", hojaCaja).forEach((x) => x.classList.toggle("activa", x === b)); }));
       $("#pg-seguir").addEventListener("click", () => flujo(D.pago));
@@ -142,7 +164,7 @@ function pagar(monto, concepto) {
     };
     const aprobado = async (txt = "¡Pago aprobado!") => {
       clearInterval(reloj);
-      hojaCaja.innerHTML = `<div class="pago-app listo-grande"><div class="ico">✅</div><h2>${txt}</h2><p class="sub">${fmt(monto)} · ${esc(concepto)}</p><span class="sello-sim">Simulación: no se cobró nada</span></div>`;
+      hojaCaja.innerHTML = `<div class="pago-app listo-grande"><span class="grande-ico ok">${ico("checkCirculo")}</span><h2>${txt}</h2><p class="sub">${fmt(monto)} · ${esc(concepto)}</p><span class="sello-sim">Simulación: no se cobró nada</span></div>`;
       await espera(1100);
       terminar(true);
     };
@@ -153,7 +175,7 @@ function pagar(monto, concepto) {
         abrirHoja(`
           <div class="pago-app">
             <span class="sello-sim">Simulación: no se cobra nada</span>
-            ${logoPago(m)}
+            <span class="logo-pago grande" style="background:${M.color}">${ico(M.icono)}</span>
             <h2>Aprueba el pago en tu app ${m}</h2>
             <p class="sub">Te llegó una solicitud de <b>${fmt(monto)}</b> de Café Poli. Ábrela en ${m} y apruébala.</p>
             <div class="cuenta-atras" id="pg-reloj">1:00</div>
@@ -186,7 +208,7 @@ function pagar(monto, concepto) {
             <button class="btn sec ancho" id="pg-cancelar" style="margin-top:8px">Cancelar</button>
           </div>`, { cerrable: false });
         $("#pg-cancelar").addEventListener("click", () => terminar(false));
-        $("#pg-tarjeta").addEventListener("click", async (e) => { e.target.disabled = true; e.target.innerHTML = `<span class="cargando"></span> Procesando…`; await espera(1600); if (!fin) aprobado("¡Tarjeta aprobada!"); });
+        $("#pg-tarjeta").addEventListener("click", async (e) => { e.currentTarget.disabled = true; e.currentTarget.innerHTML = `<span class="cargando"></span> Procesando…`; await espera(1600); if (!fin) aprobado("¡Tarjeta aprobada!"); });
       }
     };
     elegir();
@@ -196,6 +218,9 @@ function pagar(monto, concepto) {
 // ------------------------------------------------------------------ navegación
 const vista = $("#vista");
 let actual = "inicio", param = null;
+$(".tabs").innerHTML = [["inicio", "casa", "Inicio"], ["carta", "pocillo", "Carta"], ["pedir", "bolsa", "Pedir"], ["regalar", "regalo", "Regalar"], ["puntos", "colibri", "Puntos"]]
+  .map(([v, i, t]) => `<button data-ir="${v}" class="tab"><span class="ti">${ico(i)}${v === "pedir" ? '<b id="badge-carrito" class="badge oculto">0</b>' : ""}</span>${t}</button>`).join("");
+$("#btn-perfil").innerHTML = ico("perfil");
 function ir(nombre, p = null, { historia = true } = {}) {
   if (!D.perfil && !["perfil", "reclamar", "recibido"].includes(nombre)) nombre = "bienvenida";
   actual = nombre; param = p;
@@ -233,7 +258,7 @@ function revisarCumple() {
       <img src="img/poligreca-celebra.svg" alt="Poligreca celebra tu cumpleaños">
       <h2>¡Feliz cumpleaños, ${esc(D.perfil.nombre.split(" ")[0])}!</h2>
       <p class="sub">De parte de todo Café Poli: con tu compra de hoy, <b>la galleta del colibrí va por nuestra cuenta</b>. Pásate por la barra y te la entregamos por tu nombre.</p>
-      ${D.perfil.permisoTV ? `<p class="sub">Y como nos diste permiso, hoy sales en Poli TV. 🎉</p>` : ""}
+      ${D.perfil.permisoTV ? `<p class="sub">Y como nos diste permiso, hoy sales en Poli TV.</p>` : ""}
       <button class="btn ancho" id="cumple-ok">¡Gracias! Voy para allá</button>
     </div>`);
   $("#cumple-ok").addEventListener("click", () => cerrarHoja());
@@ -275,28 +300,23 @@ setInterval(() => {
   const b = D.perfil ? bolsaHoy(t) : { activa: false, quedan: 0 };
   if (b.activa && b.quedan > 0 && D.bolsaAvisada !== t.fecha) {
     D.bolsaAvisada = t.fecha; guardar();
-    aviso("🛍️ ¡Ya está la bolsa del final del día! 2 productos por $3.000", 4200);
+    aviso("¡Ya está la bolsa del final del día! 2 productos por $3.000", 4200);
     try { if ("Notification" in window && Notification.permission === "granted") new Notification("Café Poli", { body: "Ya está la bolsa del final del día: 2 productos del día por $3.000. ¡Resérvala!", icon: "img/icono-192.png" }); } catch {}
   }
   const firma = `${t.fecha}|${t.min}|${b.activa}|${b.quedan}|${D.pedidos.map(estadoPedido).join(",")}`;
-  if (firma !== firmaPrevia && (actual === "pedido" || actual === "inicio" || actual === "bolsa")) { const y = vista.scrollTop; ir(actual, param, { historia: false }); vista.scrollTop = y; }
+  if (firma !== firmaPrevia && firmaPrevia && (actual === "pedido" || actual === "inicio" || actual === "bolsa")) { const y = vista.scrollTop; ir(actual, param, { historia: false }); vista.scrollTop = y; }
   firmaPrevia = firma;
   pintarCabecera();
 }, 1000);
 
 // ------------------------------------------------------------------ vistas
-const lema = `<p class="lema">Somos origen. Somos país. Somos Poli.</p>`;
-const tarjetaPuntos = () => `
-  <button class="tarjeta navy puntos-mini" data-ir="puntos" style="width:100%;text-align:left;border:0">
-    <div class="fila entre"><h3>⭐ ${D.puntos} Puntos Colibrí</h3><small style="color:var(--oro);font-weight:800">Ver</small></div>
-    <div class="barra"><span style="width:${Math.min(100, D.puntos % 100 || (D.puntos >= 100 ? 100 : 0))}%"></span></div>
-    <p>${D.puntos >= 100 ? "¡Ya tienes un tinto gratis para canjear!" : `Te faltan ${100 - D.puntos} puntos para tu próximo tinto.`}</p>
-  </button>`;
+const lema = `<p class="lema">${ico("colibri")} Somos origen. Somos país. Somos Poli.</p>`;
+const nombre1 = () => esc((D.perfil?.nombre || "").split(" ")[0]);
 
 const VISTAS = {
   bienvenida: () => `
     <div class="bienvenida">
-      <img class="poli" src="img/poligreca-saluda.svg" alt="Poligreca te saluda">
+      <img class="poli" src="img/poligreca_saluda.png" alt="Poligreca te saluda">
       <h1>¡Quiubo! Bienvenido a Café Poli</h1>
       <p class="sub">Soy Poligreca. Regístrate con tu correo del Poli para pedir sin fila, regalar cafés y sumar Puntos Colibrí.</p>
     </div>
@@ -307,36 +327,46 @@ const VISTAS = {
 
   inicio: () => {
     const t = ahora();
+    const ab = abierto(t);
     const activo = D.pedidos.filter((p) => estadoPedido(p) !== "entregado").slice(-1)[0];
     const bolsa = bolsaHoy(t);
     const cumple = esCumple(t) && t.dia.habil;
+    const estado = ab ? `Abierto ahora · cierra a las 9:45 p. m.` : t.dia.habil ? (t.min < ABRE ? "Abrimos a las 6:00 a. m." : "Cerrado · abrimos mañana a las 6:00 a. m.") : `Hoy no abrimos: ${t.dia.motivo}`;
     return `
-      <div class="hola">
-        <img src="img/poligreca-saluda.svg" alt="">
-        <div><small>${fechaLarga(t)}</small><h1>Hola, ${esc(D.perfil.nombre.split(" ")[0])}</h1></div>
-      </div>
-      ${cumple ? `<div class="tarjeta" style="border-left:6px solid var(--magenta)"><h3>🎂 ¡Hoy es tu cumpleaños!</h3><p>Con tu compra de hoy, la galleta del colibrí va por nuestra cuenta. Pídela en la barra.</p></div>` : ""}
-      ${!abierto(t) ? `<div class="tarjeta"><h3>${t.dia.habil ? "Ahora estamos cerrados" : `Hoy no abrimos: ${t.dia.motivo}`}</h3><p>Abrimos de lunes a sábado, de 6:00 a. m. a 9:45 p. m. Puedes ver la carta y dejar tu pedido programado.</p></div>` : ""}
-      ${bolsa.activa && bolsa.quedan > 0 ? `<button class="banner-bolsa" data-ir="bolsa"><span class="ico">🛍️</span><span><b>¡Ya está la bolsa del final del día!</b><br>2 productos del día por ${fmt(3000)}. Quedan ${bolsa.quedan}.</span></button>` : ""}
+      <section class="hero">
+        <div class="hero-txt">
+          <small>${fechaLarga(t)}</small>
+          <h1>Hola, ${nombre1()}</h1>
+          <p class="hero-estado ${ab ? "si" : "no"}">${ico(ab ? "sol" : "luna")}<span>${estado}</span></p>
+          <p class="hero-lugar">${ico("ubicacion")}<span>City Campus · piso 2</span></p>
+        </div>
+        <img src="img/poligreca_saluda.png" alt="Poligreca">
+      </section>
+      ${cumple ? `<div class="tarjeta destacada magenta">${fichaIco("torta", "magenta")}<div><h3>¡Hoy es tu cumpleaños!</h3><p>Con tu compra de hoy, la galleta del colibrí va por nuestra cuenta. Pídela en la barra.</p></div></div>` : ""}
+      ${bolsa.activa && bolsa.quedan > 0 ? `<button class="banner-bolsa" data-ir="bolsa">${fichaIco("bolsaDia", "oro")}<span><b>¡Ya está la bolsa del final del día!</b><br>2 productos del día por ${fmt(3000)}. Quedan ${bolsa.quedan}.</span>${ico("flecha")}</button>` : ""}
       ${activo ? tarjetaPedido(activo, true) : ""}
-      ${tarjetaPuntos()}
+      <button class="tarjeta navy puntos-mini" data-ir="puntos">
+        <div class="fila entre"><span class="fila">${ico("colibri", "blanco")}<b>${D.puntos} Puntos Colibrí</b></span><small>Ver ${ico("flecha")}</small></div>
+        <div class="barra"><span style="width:${Math.min(100, D.puntos >= 100 ? 100 : D.puntos)}%"></span></div>
+        <p>${D.puntos >= 100 ? "¡Ya tienes un tinto gratis para canjear!" : `Te faltan ${100 - D.puntos} puntos para tu próximo tinto.`}</p>
+      </button>
       <div class="acciones">
-        <button class="accion a-magenta" data-ir="carta"><span>☕</span>Pide y pasa<small>Sin hacer fila</small></button>
-        <button class="accion a-navy" data-ir="regalar"><span>🎁</span>Regala un Café Poli<small>Con tu mensaje</small></button>
-        <button class="accion a-oro" data-ir="vaso"><span>♻️</span>Trae tu vaso<small>−${fmt(DESCUENTO_TERMO)} en cualquier tamaño</small></button>
-        <button class="accion a-cian" data-ir="bolsa"><span>🛍️</span>Bolsa del día<small>Desde las 8:30 p. m.</small></button>
+        <button class="accion a-magenta" data-ir="carta">${ico("pocillo")}<b>Pide y pasa</b><small>Sin hacer fila</small></button>
+        <button class="accion a-navy" data-ir="regalar">${ico("regalo")}<b>Regala un Café Poli</b><small>Con tu mensaje</small></button>
+        <button class="accion a-oro" data-ir="vaso">${ico("vaso")}<b>Trae tu vaso</b><small>−${fmt(DESCUENTO_TERMO)} en bebidas preparadas</small></button>
+        <button class="accion a-cian" data-ir="bolsa">${ico("bolsaDia")}<b>Bolsa del día</b><small>Desde las 8:30 p. m.</small></button>
       </div>
-      <div class="tarjeta"><h3>⚡ Semana de parciales</h3><p>Llegó el Café Parcial: doble espresso con panela y canela. Unos 125 mg de cafeína: uno por persona.</p></div>
-      <div class="tarjeta"><h3>🙋 ¿Te regalaron un café?</h3><p>Muestra tu código en la barra. Si trabajas en la barra, <button class="enlace" data-ir="reclamar">valida un código aquí</button>.</p></div>
+      <div class="tarjeta destacada">${fichaIco("rayo", "magenta")}<div><h3>Semana de parciales</h3><p>Llegó el Café Parcial: doble espresso con panela y canela. Unos 125 mg de cafeína: uno por persona.</p></div></div>
+      <div class="tarjeta destacada">${fichaIco("barista", "cian")}<div><h3>¿Te regalaron un café?</h3><p>Muestra tu código en la barra. Si atiendes la barra, <button class="enlace" data-ir="reclamar">valida un código aquí</button>.</p></div></div>
       ${lema}`;
   },
 
   carta: () => `
-    <h1>La carta</h1>
-    <p class="sub">Por tamaño en onzas. Si traes tu propio vaso, cualquier bebida vale ${fmt(DESCUENTO_TERMO)} menos.</p>
-    <div class="buscar"><input id="buscar" type="search" placeholder="Busca: tinto, Milo, buñuelo…" aria-label="Buscar en la carta" value="${esc(estadoCarta.q)}"></div>
-    <div class="chips" role="tablist" aria-label="Mundos de la carta">
-      ${["Todo", ...CARTA.map((c) => c.cat)].map((c) => `<button class="chip ${estadoCarta.mundo === c ? "activo" : ""}" data-mundo="${esc(c)}">${esc(c)}</button>`).join("")}
+    <div class="carta-sup">
+      <label class="buscar">${ico("buscar")}<input id="buscar" type="search" placeholder="Busca: tinto, Milo, agua…" aria-label="Buscar en la carta" value="${esc(estadoCarta.q)}"></label>
+      <div class="mundos" role="tablist" aria-label="Categorías de la carta">
+        ${CARTA.map((c, i) => `<button class="chip-mundo ${!estadoCarta.q && estadoCarta.mundo === i ? "activo" : ""}" role="tab" aria-selected="${estadoCarta.mundo === i}" data-mundo="${i}" style="${estiloCat(c.color)}">${ico(ICONO_MUNDO[c.icono] || "pocillo")}<span>${esc(CORTO[c.cat] || c.cat)}</span></button>`).join("")}
+      </div>
     </div>
     <div id="lista-carta">${listaCarta()}</div>
     ${lema}`,
@@ -347,7 +377,7 @@ const VISTAS = {
     if (!lineas.length) {
       const prev = D.pedidos.slice(-3).reverse();
       return `<h1>Tu pedido</h1>
-        <div class="vacio"><div class="grande">🛍️</div><p>Tu pedido está vacío.</p><button class="btn" data-ir="carta">Ver la carta</button></div>
+        <div class="vacio">${fichaIco("bolsa", "crema")}<p>Tu pedido está vacío.</p><button class="btn" data-ir="carta">Ver la carta</button></div>
         ${prev.length ? `<h2>Tus pedidos</h2>${prev.map((p) => tarjetaPedido(p, true)).join("")}` : ""}${lema}`;
     }
     const r = resumenCarrito();
@@ -356,14 +386,15 @@ const VISTAS = {
       <h1>Tu pedido</h1>
       <p class="sub">${abierto(t) ? "Pide, paga y pasa por él sin hacer fila." : "Estamos cerrados: tu pedido queda programado."}</p>
       <div class="tarjeta">
-        ${lineas.map(([k, n]) => { const [id, oz] = k.split("@"); const s = stock(id, t); return `
-          <div class="item-carrito"><div class="n">${esc(conOz(id, oz))}<small>${fmt(precio(id, oz))} c/u${s !== Infinity && s < n ? ` · <b style="color:#c0003c">solo quedan ${s}</b>` : ""}</small></div>
-          <div class="cantidad"><button data-menos="${k}" aria-label="Quitar uno">−</button><b>${n}</b><button data-mas="${k}" aria-label="Agregar uno">+</button></div></div>`; }).join("")}
-        ${r.desc ? `<div class="linea"><span>♻️ Descuento por traer tu vaso</span><span>−${fmt(r.desc)}</span></div>` : ""}
+        ${lineas.map(([k, n]) => { const [id, oz] = k.split("@"); const p = porId(id); const s = stock(id, t); return `
+          <div class="item-carrito">${foto(p, "mini")}<div class="n">${esc(conOz(id, oz))}<small>${fmt(precio(id, oz))} c/u${r.vasoEn === k ? ` · <b class="verde">−${fmt(DESCUENTO_TERMO)} con tu vaso</b>` : ""}${s !== Infinity && s < n ? ` · <b class="rojo">solo quedan ${s}</b>` : ""}</small></div>
+          <div class="cantidad"><button data-menos="${k}" aria-label="Quitar uno">${ico("menos")}</button><b>${n}</b><button data-mas="${k}" aria-label="Agregar uno">${ico("mas")}</button></div></div>`; }).join("")}
+        ${r.desc ? `<div class="linea"><span>Descuento por traer tu vaso</span><span>−${fmt(r.desc)}</span></div>` : ""}
         <div class="linea total"><span>Total</span><span>${fmt(r.total)}</span></div>
       </div>
-      ${r.bebidas ? `<label class="interruptor"><span>♻️ Traigo mi propio vaso (−${fmt(DESCUENTO_TERMO)})</span><input type="checkbox" id="chk-vaso" ${D.conVaso ? "checked" : ""}></label>` : ""}
-      <h2>¿Cuándo pasas por él?</h2>
+      ${r.elegible ? `<label class="interruptor">${fichaIco("vaso", "oro")}<span>Traigo mi propio vaso<small>−${fmt(DESCUENTO_TERMO)} en ${esc(conOz(...r.elegible.split("@")))}</small></span><input type="checkbox" id="chk-vaso" ${D.conVaso ? "checked" : ""}></label>`
+        : `<p class="nota-sim">${ico("vaso")} El descuento por traer tu vaso aplica a las bebidas preparadas, no a las selladas ni a la comida.</p>`}
+      <h2>${ico("reloj")} ¿Cuándo pasas por él?</h2>
       <div class="opciones">
         ${abierto(t) ? opt("ahora", "Lo antes posible (≈10 min)") : ""}
         ${opt("descanso", "En el descanso de la noche (8:20 p. m.)")}
@@ -371,7 +402,7 @@ const VISTAS = {
       </div>
       ${D.recogida.tipo === "hora" ? `<label class="campo"><span>Hora de recogida</span><select id="hora-rec">${horasRecogida(t).map((h) => `<option value="${h}" ${String(h) === String(D.recogida.hora) ? "selected" : ""}>${hhmm(h)}${!abierto(t) || h < t.min ? " (programado)" : ""}</option>`).join("")}</select></label>` : ""}
       <button class="btn ancho" id="btn-pagar" ${r.problema ? "disabled" : ""}>Pagar ${fmt(r.total)}</button>
-      ${r.problema ? `<p class="nota-sim" style="color:#c0003c;font-weight:800">${r.problema}</p>` : ""}
+      ${r.problema ? `<p class="nota-sim rojo">${r.problema}</p>` : ""}
       <p class="nota-sim">Simulación: no se cobra nada. Sumas ${Math.floor(r.total / 1000)} Puntos Colibrí.</p>
       ${lema}`;
   },
@@ -385,25 +416,25 @@ const VISTAS = {
 
   regalar: () => {
     const r = borrador();
-    const prods = REGALABLES.map(porId).filter(Boolean);
+    const prods = REGALABLES.map(porId).filter((p) => p.precio);
     const p = porId(r.producto);
     const tams = tamanosDe(p);
     const total = precio(r.producto, r.oz) + (r.tarjeta ? DETALLE_REGALO.precio : 0);
     return `
-      <h1>Regala un Café Poli</h1>
-      <p class="sub">Tú escribes y firmas el mensaje: aquí no hay regalos anónimos. Le llega una imagen con tu mensaje y un código para reclamarlo en la barra.</p>
+      <section class="hero regalo-hero">${fichaIco("regalo", "magenta")}<div class="hero-txt"><h1>Regala un Café Poli</h1><p>Tú escribes y firmas el mensaje: aquí no hay regalos anónimos. Le llega una imagen con tu mensaje y un código para reclamarlo en la barra.</p></div></section>
       <h2>¿Para quién es?</h2>
       <div class="opciones">${["Alguien especial", "Un amigo", "Mi hijo o hija", "Un profe"].map((v) => `<button class="opcion ${r.para === v ? "activa" : ""}" data-para="${v}">${v}</button>`).join("")}</div>
-      <label class="campo"><span>¿Qué le regalas?</span><select id="rg-prod">${prods.map((q) => `<option value="${q.id}" ${q.id === r.producto ? "selected" : ""}>${esc(nombreCorto(q))} · desde ${fmt(precio(q.id))}</option>`).join("")}</select></label>
-      ${tams ? `<div class="opciones">${tams.map((s) => `<button class="opcion ${String(s.oz) === String(r.oz) ? "activa" : ""}" data-oz="${s.oz}">${s.oz} oz · ${fmt(s.precio)}</button>`).join("")}</div>` : ""}
+      <h2>¿Qué le regalas?</h2>
+      <div class="regalables">${prods.map((q) => `<button class="regalable ${q.id === r.producto ? "activa" : ""}" data-prod="${q.id}">${foto(q, "mini")}<span>${esc(nombreCorto(q))}</span></button>`).join("")}</div>
+      ${tams ? `<div class="seg grande" role="radiogroup" aria-label="Tamaño">${tams.map((s) => `<button role="radio" aria-checked="${String(s.oz) === String(r.oz)}" class="${String(s.oz) === String(r.oz) ? "activo" : ""}" data-oz="${s.oz}">${s.oz} oz<small>${fmt(s.precio)}</small></button>`).join("")}</div>` : ""}
       <label class="campo"><span>Nombre de quien lo recibe</span><input id="rg-nombre" maxlength="28" value="${esc(r.nombre)}" autocomplete="off"></label>
       <label class="campo"><span>Tu mensaje <b class="contador" id="rg-cont">${r.mensaje.length}/120</b></span><textarea id="rg-msj" maxlength="120" placeholder="Escribe algo bonito…">${esc(r.mensaje)}</textarea></label>
       <label class="campo"><span>Firma</span><input id="rg-firma" maxlength="24" value="${esc(r.firma)}" autocomplete="off"></label>
-      <label class="interruptor"><span>💌 ${DETALLE_REGALO.nombre} (+${fmt(DETALLE_REGALO.precio)})</span><input type="checkbox" id="rg-tarjeta" ${r.tarjeta ? "checked" : ""}></label>
+      <label class="interruptor">${fichaIco("sobre", "magenta")}<span>${DETALLE_REGALO.nombre}<small>+${fmt(DETALLE_REGALO.precio)}</small></span><input type="checkbox" id="rg-tarjeta" ${r.tarjeta ? "checked" : ""}></label>
       <div class="tarjeta"><div class="linea total" style="border:0;margin:0;padding:0"><span>Total</span><span id="rg-total">${fmt(total)}</span></div></div>
       <button class="btn ancho" id="rg-pagar">Pagar y crear el código</button>
       <p class="nota-sim">Simulación: no se cobra nada. El código vale 30 días.</p>
-      ${D.regalos.length ? `<h2>Tus regalos</h2>${D.regalos.slice(-4).reverse().map((g) => `<button class="tarjeta" data-ir="regaloListo" data-p="${g.codigo}" style="width:100%;text-align:left;border:0"><div class="fila entre"><h3>Para ${esc(g.nombre)}</h3><b style="color:var(--magenta)">${g.codigo}</b></div><p>${esc(conOz(g.producto, g.oz))} · ${g.usado ? "ya reclamado" : `vale hasta el ${g.vence}`}</p></button>`).join("")}` : ""}
+      ${D.regalos.length ? `<h2>Tus regalos</h2>${D.regalos.slice(-4).reverse().map((g) => `<button class="tarjeta destacada" data-ir="regaloListo" data-p="${g.codigo}">${foto(porId(g.producto), "mini")}<div><h3>Para ${esc(g.nombre)} · <span class="codigo-mini">${g.codigo}</span></h3><p>${esc(conOz(g.producto, g.oz))} · ${g.usado ? "ya reclamado" : `vale hasta el ${g.vence}`}</p></div></button>`).join("")}` : ""}
       ${lema}`;
   },
 
@@ -416,10 +447,10 @@ const VISTAS = {
       <div class="vista-previa"><img id="img-regalo" alt="Tarjeta del regalo para ${esc(g.nombre)} con el código ${g.codigo}"></div>
       <div class="codigo-grande">${g.codigo}</div>
       <div class="compartir">
-        <button class="btn ancho" id="rg-compartir">📲 Compartir (Instagram, WhatsApp…)</button>
-        <a class="btn verde-wa ancho" id="rg-wa" target="_blank" rel="noopener">Enviar por WhatsApp</a>
-        <button class="btn sec ancho" id="rg-bajar">⬇️ Descargar la imagen</button>
-        <button class="btn sec ancho" id="rg-copiar">Copiar el mensaje</button>
+        <button class="btn ancho" id="rg-compartir">${ico("compartir")} Compartir (Instagram, WhatsApp…)</button>
+        <a class="btn verde-wa ancho" id="rg-wa" target="_blank" rel="noopener">${ico("chat")} Enviar por WhatsApp</a>
+        <button class="btn sec ancho" id="rg-bajar">${ico("descargar")} Descargar la imagen</button>
+        <button class="btn sec ancho" id="rg-copiar">${ico("copiar")} Copiar el mensaje</button>
       </div>
       <p class="nota-sim">Vale hasta el ${g.vence}. Se reclama una sola vez.</p>
       ${lema}`;
@@ -427,17 +458,17 @@ const VISTAS = {
 
   recibido: (dato) => {
     const g = b64.de(dato || "");
-    if (!g || !g.c) return `<div class="vacio"><div class="grande">🎁</div><p>Este enlace de regalo no está completo.</p><button class="btn" data-ir="inicio">Ir a Café Poli</button></div>`;
+    if (!g || !g.c) return `<div class="vacio">${fichaIco("regalo", "crema")}<p>Este enlace de regalo no está completo.</p><button class="btn" data-ir="inicio">Ir a Café Poli</button></div>`;
     const p = porId(g.p);
     return `
-      <div class="tarjeta navy" style="text-align:center;padding:22px 16px">
-        <p style="color:var(--cian);font-weight:800;letter-spacing:.18em;font-size:.72rem;margin:0">TE REGALARON UN CAFÉ</p>
-        <h1 style="color:#fff;font-size:1.9rem;margin:8px 0">Para ${esc(g.n)}${g.e ? " ❤" : ""}</h1>
-        <p style="color:var(--oro);font-weight:800">${esc(p ? conOz(g.p, g.o) : "Un Café Poli")}${g.k ? " + chocolatina" : ""}</p>
-        <p style="font-style:italic;font-size:1.05rem;margin:14px 0 6px;color:#fff">“${esc(g.m)}”</p>
-        <p style="color:var(--oro);font-weight:800;font-family:var(--f-titulo)">— ${esc(g.f)}</p>
+      <div class="tarjeta navy recibido">
+        <p class="ceja">Te regalaron un café</p>
+        <h1>Para ${esc(g.n)}${g.e ? ` ${ico("corazon", "blanco")}` : ""}</h1>
+        <p class="oro">${esc(p.precio ? conOz(g.p, g.o) : "Un Café Poli")}${g.k ? " + chocolatina" : ""}</p>
+        <p class="mensaje">“${esc(g.m)}”</p>
+        <p class="oro firma">— ${esc(g.f)}</p>
       </div>
-      <div class="tarjeta" style="text-align:center">
+      <div class="tarjeta centro">
         <h3>Tu código</h3>
         <div class="codigo-grande">${esc(g.c)}</div>
         <div class="qr-pago">${qrSVG(`CAFEPOLI:${g.c}`, 154)}</div>
@@ -448,41 +479,40 @@ const VISTAS = {
   },
 
   reclamar: (cod) => `
-    <h1>Reclamar un código</h1>
-    <p class="sub">En la barra: el barista escribe o escanea el código del regalo, de un tinto canjeado o de la bolsa del día.</p>
+    <section class="hero regalo-hero">${fichaIco("barista", "cian")}<div class="hero-txt"><h1>Reclamar un código</h1><p>En la barra: el barista escribe o escanea el código del regalo, del tinto canjeado o de la bolsa del día.</p></div></section>
     <label class="campo"><span>Código</span><input id="rc-cod" placeholder="CP-7KQ4" value="${esc(cod || "")}" autocapitalize="characters" autocomplete="off"></label>
-    <button class="btn ancho" id="rc-validar">Validar</button>
+    <button class="btn ancho" id="rc-validar">${ico("qr")} Validar</button>
     <div id="rc-res" style="margin-top:12px"></div>
     ${lema}`,
 
   puntos: () => `
-    <div class="tarjeta navy" style="text-align:center">
-      <p style="margin:0 0 6px">Club Colibrí</p>
+    <div class="tarjeta navy centro club">
+      <span class="club-ico">${ico("colibri")}</span>
+      <p>Club Colibrí</p>
       <div class="puntos-grande">${D.puntos}</div>
       <p>Puntos Colibrí</p>
-      <div class="barra-puntos" style="background:rgba(255,255,255,.18)"><span style="width:${Math.min(100, D.puntos)}%"></span></div>
+      <div class="barra-puntos claro"><span style="width:${Math.min(100, D.puntos)}%"></span></div>
       <p>1 punto por cada $1.000 · 100 puntos = 1 tinto</p>
     </div>
-    <button class="btn ancho oro" id="canjear" ${D.puntos >= 100 ? "" : "disabled"}>${D.puntos >= 100 ? "Canjear un tinto gratis" : `Te faltan ${100 - D.puntos} puntos para un tinto`}</button>
-    ${D.canjes.length ? `<h2>Tus canjes</h2>${D.canjes.slice(-3).reverse().map((c) => `<div class="tarjeta fila entre"><span>☕ Tinto gratis</span><b style="color:var(--magenta)">${c.codigo}${c.usado ? " · usado" : ""}</b></div>`).join("")}` : ""}
-    <div class="tarjeta" style="margin-top:12px"><h3>🎂 Tu cumpleaños</h3><p>${D.perfil?.cumpleDia ? `Lo tenemos el ${D.perfil.cumpleDia} de ${MESES[D.perfil.cumpleMes - 1]}. ` : ""}Ese día, si es hábil (lunes a sábado, no festivo), te felicitamos aquí y con tu compra la galleta del colibrí va por nuestra cuenta.</p></div>
-    <div class="tarjeta"><h3>♻️ Suma con tu vaso</h3><p>Si traes tu propio vaso, pagas ${fmt(DESCUENTO_TERMO)} menos y una de cada diez veces te ganas un tinto. <button class="enlace" data-ir="vaso">Ver cómo</button></p></div>
+    <button class="btn ancho oro" id="canjear" ${D.puntos >= 100 ? "" : "disabled"}>${D.puntos >= 100 ? `${ico("pocillo")} Canjear un tinto gratis` : `Te faltan ${100 - D.puntos} puntos para un tinto`}</button>
+    ${D.canjes.length ? `<h2>Tus canjes</h2>${D.canjes.slice(-3).reverse().map((c) => `<div class="tarjeta destacada">${fichaIco("pocillo", "oro")}<div><h3>Tinto gratis</h3><p><b class="codigo-mini">${c.codigo}</b>${c.usado ? " · usado" : ""}</p></div></div>`).join("")}` : ""}
+    <div class="tarjeta destacada" style="margin-top:12px">${fichaIco("torta", "magenta")}<div><h3>Tu cumpleaños</h3><p>${D.perfil?.cumpleDia ? `Lo tenemos el ${D.perfil.cumpleDia} de ${MESES[D.perfil.cumpleMes - 1]}. ` : ""}Ese día, si es hábil (lunes a sábado, no festivo), te felicitamos aquí y con tu compra la galleta del colibrí va por nuestra cuenta.</p></div></div>
+    <div class="tarjeta destacada">${fichaIco("vaso", "oro")}<div><h3>Suma con tu vaso</h3><p>Si traes tu propio vaso, las bebidas preparadas valen ${fmt(DESCUENTO_TERMO)} menos y una de cada diez veces te ganas un tinto. <button class="enlace" data-ir="vaso">Ver cómo</button></p></div></div>
     <h2>Tu historial</h2>
-    <div class="tarjeta historial">${D.historial.slice(-8).reverse().map(([n, p]) => `<div class="linea"><span>${esc(n)}</span><b style="color:${p < 0 ? "var(--magenta)" : "var(--navy)"}">${p > 0 ? "+" : ""}${p}</b></div>`).join("")}</div>
+    <div class="tarjeta historial">${D.historial.slice(-8).reverse().map(([n, p]) => `<div class="linea"><span>${esc(n)}</span><b class="${p < 0 ? "rojo" : ""}">${p > 0 ? "+" : ""}${p}</b></div>`).join("")}</div>
     ${lema}`,
 
   vaso: () => {
-    const ej = ["tinto", "capu", "latte", "milo", "chai", "panela"].map(porId).filter(Boolean);
+    const ej = ["tinto", "capu", "latte", "milo", "chai", "panela"].map(porId).filter((p) => p.precio);
     return `
-      <h1>Trae tu propio vaso</h1>
-      <p class="sub">Tu vaso o tu termo, del tamaño que quieras. Pagas por onzas y siempre ${fmt(DESCUENTO_TERMO)} menos. Menos vasos desechables, más plata en tu bolsillo.</p>
+      <section class="hero regalo-hero">${fichaIco("vaso", "oro")}<div class="hero-txt"><h1>Trae tu propio vaso</h1><p>Tu vaso o tu termo, del tamaño que quieras. En las bebidas preparadas pagas por onzas y siempre ${fmt(DESCUENTO_TERMO)} menos. No aplica a las bebidas selladas ni a la comida.</p></div></section>
       <div class="tarjeta">
-        ${ej.map((p) => `<div class="linea" style="border-bottom:1px dashed var(--linea);align-items:center"><span><b>${esc(nombreCorto(p))}</b></span><span style="text-align:right;font-size:.8rem">${(tamanosDe(p) || []).map((s) => `${s.oz} oz <s style="color:#9aa">${fmt(s.precio)}</s> <b style="color:var(--magenta)">${fmt(s.precio - DESCUENTO_TERMO)}</b>`).join("<br>")}</span></div>`).join("")}
+        ${ej.map((p) => `<div class="fila-vaso">${foto(p, "mini")}<b>${esc(nombreCorto(p))}</b><span>${(tamanosDe(p) || []).map((s) => `<i>${s.oz} oz <s>${fmt(s.precio)}</s> <b>${fmt(s.precio - DESCUENTO_TERMO)}</b></i>`).join("")}</span></div>`).join("")}
       </div>
-      <div class="tarjeta"><h3>🍀 1 de cada 10</h3><p>Cada vez que traes tu vaso participas: una de cada diez veces, el tinto va por nuestra cuenta.</p></div>
+      <div class="tarjeta destacada">${fichaIco("estrella", "oro")}<div><h3>1 de cada 10</h3><p>Cada vez que traes tu vaso participas: una de cada diez veces, el tinto va por nuestra cuenta.</p></div></div>
       <h2>¿No tienes vaso?</h2>
-      <div class="tarjeta">${VASOS.map((v) => { const [et, cl] = etiquetaStock("vaso"); return `<div class="linea" style="align-items:center"><span>Vaso Café Poli · ${v.oz} oz</span><span class="fila"><b>${fmt(v.precio)}</b><button class="tam" data-add="vaso" data-oz="${v.oz}" ${cl === "no" ? "disabled" : ""}><b>+</b></button></span></div>`; }).join("")}
-        <p style="margin-top:6px">Con ${fmt(DESCUENTO_TERMO)} menos en cada bebida, el vaso se paga solo antes de que termine el semestre.</p></div>
+      <div class="tarjeta">${VASOS.map((v) => { const [, cl] = etiquetaStock("vaso"); return `<div class="linea centro-v"><span class="fila">${foto(porId("vaso"), "mini")}Vaso Café Poli · ${v.oz} oz</span><span class="fila"><b>${fmt(v.precio)}</b><button class="mas" data-add="vaso" data-oz="${v.oz}" ${cl === "no" ? "disabled" : ""} aria-label="Agregar vaso de ${v.oz} onzas">${ico("mas")}</button></span></div>`; }).join("")}
+        <p style="margin-top:6px">Con ${fmt(DESCUENTO_TERMO)} menos en cada bebida preparada, el vaso se paga solo antes de que termine el semestre.</p></div>
       ${lema}`;
   },
 
@@ -492,22 +522,20 @@ const VISTAS = {
     const mias = D.bolsas.filter((x) => x.fecha === t.fecha);
     let cuerpo;
     if (!t.dia.habil) cuerpo = `<div class="tarjeta"><h3>Hoy no hay bolsa</h3><p>Hoy es ${t.dia.motivo} y Café Poli no abre.</p></div>`;
-    else if (t.min < BOLSA_DESDE) cuerpo = `<div class="tarjeta"><h3>Sale a las 8:30 p. m.</h3><p>A esa hora la caja ya sabe qué quedó del día. Si hay, te avisamos aquí. ${D.demo ? "" : "En el modo demo (Perfil) puedes adelantar la hora."}</p></div>`;
+    else if (t.min < BOLSA_DESDE) cuerpo = `<div class="tarjeta destacada">${fichaIco("reloj", "cian")}<div><h3>Sale a las 8:30 p. m.</h3><p>A esa hora la caja ya sabe qué quedó del día. Si hay, te avisamos aquí. En el modo demo (Perfil) puedes adelantar la hora.</p></div></div>`;
     else if (t.min >= BOLSA_HASTA) cuerpo = `<div class="tarjeta"><h3>La bolsa de hoy ya cerró</h3><p>Se recoge hasta las 9:30 p. m. Lo que nadie reservó se donó esta noche.</p></div>`;
     else if (b.quedan <= 0) cuerpo = `<div class="tarjeta"><h3>¡Se acabaron!</h3><p>Hoy se vendió casi todo. Lo poco que queda se dona esta noche.</p></div>`;
     else cuerpo = `
-      <div class="tarjeta" style="border-left:6px solid var(--oro)">
-        <h3>🛍️ 2 productos del día · ${fmt(3000)}</h3>
-        <p>Hoy quedó, por ejemplo: <b>${b.ejemplo.map(esc).join("</b> y <b>")}</b>. En la carta valen más de ${fmt(b.valor)}.</p>
-        <p style="margin-top:8px;font-weight:800;color:var(--navy)">Quedan ${b.quedan} bolsas</p>
+      <div class="tarjeta destacada borde-oro">
+        <div class="bolsa-fotos">${b.pan.slice(0, 2).map((x) => foto(porId(x.id), "mini")).join("")}</div>
+        <div><h3>2 productos del día · ${fmt(3000)}</h3><p>Hoy quedó, por ejemplo, <b>${b.ejemplo.map(esc).join("</b> y <b>")}</b>. En la carta valen ${fmt(b.valor)}.</p><p class="quedan">Quedan ${b.quedan} bolsas</p></div>
       </div>
       <button class="btn ancho" id="bolsa-reservar">Reservar y pagar ${fmt(3000)}</button>`;
     return `
-      <h1>Bolsa del final del día</h1>
-      <p class="sub">Lo que no se vendió, recién horneado en la mañana, a ${fmt(3000)} por dos productos. Menos comida a la basura.</p>
+      <section class="hero regalo-hero">${fichaIco("bolsaDia", "oro")}<div class="hero-txt"><h1>Bolsa del final del día</h1><p>Lo que no se vendió, horneado esta mañana, a ${fmt(3000)} por dos productos. Los empacados no entran: no se dañan.</p></div></section>
       ${cuerpo}
-      ${mias.map((x) => `<div class="tarjeta"><h3>Tu bolsa</h3><p>Recógela en la barra antes de las 9:30 p. m. con este código:</p><div class="codigo-grande">${x.codigo}</div><p>Trae: ${x.items.map(esc).join(" y ")}.</p></div>`).join("")}
-      <div class="tarjeta"><h3>¿Cómo funciona?</h3><p>1. A las 8:30 p. m. la caja revisa el inventario y la app avisa al Club Colibrí.<br>2. La reservas y la pagas aquí.<br>3. La recoges con tu código antes de las 9:30 p. m.<br>4. Lo que nadie reserva se dona esa misma noche.</p></div>
+      ${mias.map((x) => `<div class="tarjeta centro"><h3>Tu bolsa</h3><p>Recógela en la barra antes de las 9:30 p. m. con este código:</p><div class="codigo-grande">${x.codigo}</div><p>Trae: ${x.items.map(esc).join(" y ")}.</p></div>`).join("")}
+      <div class="tarjeta"><h3>¿Cómo funciona?</h3><ol class="pasos"><li>A las 8:30 p. m. la caja revisa el inventario y la app avisa al Club Colibrí.</li><li>La reservas y la pagas aquí.</li><li>La recoges con tu código antes de las 9:30 p. m.</li><li>Lo que nadie reserva se dona esa misma noche.</li></ol></div>
       ${lema}`;
   },
 
@@ -515,7 +543,7 @@ const VISTAS = {
     <h1>Mi perfil</h1>
     ${formPerfil(false)}
     <div class="tarjeta"><h3>Mis datos</h3><p>En este prototipo todo se guarda solo en este celular. <button class="enlace" id="borrar">Borrar mis datos</button></p></div>
-    <p style="text-align:center"><button class="enlace" id="ver-demo" style="color:var(--suave)">${D.demo ? "Modo demo (activo)" : "Modo demo"}</button></p>
+    <p class="centro"><button class="enlace suave" id="ver-demo">${ico("ajustes")} ${D.demo ? "Modo demo (activo)" : "Modo demo"}</button></p>
     <div id="panel-demo" class="${D.demo || estadoCarta.demoAbierto ? "" : "oculto"}">${panelDemo()}</div>
     ${lema}`,
 };
@@ -531,7 +559,7 @@ function formPerfil(nuevo) {
         <select id="pf-dia" aria-label="Día">${["", ...Array.from({ length: 31 }, (_, i) => i + 1)].map((d) => `<option value="${d}" ${String(d) === String(p.cumpleDia) ? "selected" : ""}>${d || "Día"}</option>`).join("")}</select>
         <select id="pf-mes" aria-label="Mes">${["", ...MESES].map((m, i) => `<option value="${i || ""}" ${String(i) === String(p.cumpleMes) ? "selected" : ""}>${m || "Mes"}</option>`).join("")}</select>
       </div><small>Te felicitamos ese día si es hábil (lunes a sábado, no festivo).</small></div>
-      <label class="interruptor" style="box-shadow:none;padding:4px 0"><span>Quiero salir en Poli TV el día de mi cumpleaños</span><input type="checkbox" id="pf-tv" ${p.permisoTV ? "checked" : ""}></label>
+      <label class="interruptor plano"><span>Quiero salir en Poli TV el día de mi cumpleaños</span><input type="checkbox" id="pf-tv" ${p.permisoTV ? "checked" : ""}></label>
       <button class="btn ancho" id="pf-guardar">${nuevo ? "Entrar a Café Poli" : "Guardar"}</button>
     </div>`;
 }
@@ -540,83 +568,131 @@ function panelDemo() {
   const cumple = esCumple(t);
   return `
     <div class="tarjeta demo">
-      <h3>🧪 Modo demo</h3>
+      <h3>${ico("ajustes")} Modo demo</h3>
       <p>Cambia la fecha y la hora de la app para probar el cumpleaños, los festivos, los horarios y la bolsa del final del día.</p>
       <div class="fila" style="margin-top:8px"><label class="campo" style="flex:1;margin:0"><span>Fecha</span><input type="date" id="dm-fecha" value="${t.fecha}"></label>
       <label class="campo" style="flex:1;margin:0"><span>Hora</span><input type="time" id="dm-hora" value="${String(Math.floor(t.min / 60)).padStart(2, "0")}:${String(t.min % 60).padStart(2, "0")}"></label></div>
       <button class="btn navy ancho" id="dm-aplicar" style="margin-top:8px">Usar esta fecha y hora</button>
       <div class="botones">
-        <button data-dm="cumple-habil">🎂 Mi cumpleaños en día hábil</button>
-        <button data-dm="cumple-domingo">🎂 Mi cumpleaños en domingo</button>
-        <button data-dm="cumple-festivo">🎂 Mi cumpleaños el 8 de diciembre (festivo)</button>
-        <button data-dm="bolsa">🛍️ 8:35 p. m. (bolsa del día)</button>
-        <button data-dm="pico">⏱️ 6:30 p. m. (antes del pico)</button>
-        <button data-dm="cerrado">🌙 10:00 p. m. (cerrado)</button>
+        <button data-dm="cumple-habil">${ico("torta")} Mi cumpleaños en día hábil</button>
+        <button data-dm="cumple-domingo">${ico("torta")} Mi cumpleaños en domingo</button>
+        <button data-dm="cumple-festivo">${ico("torta")} Mi cumpleaños el 8 de diciembre (festivo)</button>
+        <button data-dm="bolsa">${ico("bolsaDia")} 8:35 p. m. (bolsa del día)</button>
+        <button data-dm="pico">${ico("reloj")} 6:30 p. m. (antes del pico)</button>
+        <button data-dm="cerrado">${ico("luna")} 10:00 p. m. (cerrado)</button>
       </div>
       <div class="estado-dia">${fechaLarga(t)} · ${hhmm(t.min)}: ${t.dia.motivo}${cumple ? ` · es tu cumpleaños → ${t.dia.habil ? "se te felicita" : "no se felicita porque es " + t.dia.motivo}` : ""}</div>
       <button class="btn sec ancho" id="dm-real" style="margin-top:8px">Volver a la fecha y hora reales</button>
       <button class="btn sec ancho" id="dm-reiniciar" style="margin-top:8px">Reiniciar la demo (pedidos, inventario y puntos)</button>
     </div>`;
 }
-const estadoCarta = { mundo: "Todo", q: "", demoAbierto: false };
+const estadoCarta = { mundo: 0, q: "", demoAbierto: false, tam: {} };
 const normal = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 function listaCarta() {
   const q = normal(estadoCarta.q.trim());
-  const html = [];
-  for (const c of CARTA) {
-    if (!q && estadoCarta.mundo !== "Todo" && estadoCarta.mundo !== c.cat) continue; // al buscar, se busca en toda la carta
-    const items = c.items.filter((p) => !q || normal(p.nombre + " " + c.cat + " " + (p.grupo || "")).includes(q));
-    if (!items.length) continue;
-    let grupo = null;
-    const filas = items.map((p) => {
-      const g = p.grupo && p.grupo !== grupo ? `<div class="grupo">${esc(p.grupo)}</div>` : "";
-      grupo = p.grupo || grupo;
-      return g + filaProducto(p);
-    }).join("");
-    html.push(`<section class="mundo" style="--cat:${c.color}"><div class="mundo-cab"><div><h2>${esc(c.cat)}</h2><p>${esc(c.lema || "")}</p></div></div>${filas}${c.nota ? `<p class="prod-nota" style="margin:4px 6px">${esc(c.nota)}</p>` : ""}</section>`);
+  if (q) {
+    const res = PRODUCTOS.filter((p) => normal(`${p.nombre} ${p.mundo} ${p.grupo || ""} ${DESC[p.id] || ""}`).includes(q));
+    if (!res.length) return `<div class="vacio">${fichaIco("buscar", "crema")}<p>No encontramos «${esc(estadoCarta.q)}».</p></div>`;
+    return `<p class="resultados">${res.length} resultado${res.length === 1 ? "" : "s"}</p>${res.map(tarjetaProducto).join("")}`;
   }
-  return html.join("") || `<div class="vacio"><div class="grande">🔎</div><p>No encontramos «${esc(estadoCarta.q)}».</p></div>`;
+  const c = CARTA[estadoCarta.mundo] || CARTA[0];
+  let grupo = null;
+  const filas = c.items.map((p0) => {
+    const p = porId(p0.id);
+    const g = p.grupo && p.grupo !== grupo ? `<p class="grupo">${esc(p.grupo)}</p>` : "";
+    grupo = p.grupo || grupo;
+    return g + tarjetaProducto(p);
+  }).join("");
+  const algunoVaso = c.items.some((p) => p.termo);
+  return `
+    <div class="mundo-cab" style="${estiloCat(c.color)}">
+      <span class="mundo-ico">${ico(ICONO_MUNDO[c.icono] || "pocillo")}</span>
+      <div><h2>${esc(c.cat)}</h2><p>${esc(c.lema || "")}</p></div>
+    </div>
+    ${c.nota ? `<p class="mundo-nota">${esc(c.nota)}</p>` : ""}
+    ${algunoVaso ? `<p class="mundo-nota verde">${ico("vaso")} Con tu propio vaso: −${fmt(DESCUENTO_TERMO)} en las bebidas marcadas.</p>` : ""}
+    <div class="productos">${filas}</div>`;
 }
-function filaProducto(p) {
+function tarjetaProducto(p) {
   const [et, cl] = etiquetaStock(p.id);
   const agotado = cl === "no";
   const tams = tamanosDe(p);
-  const cant = (k) => (D.carrito[k] ? `<span class="cant">${D.carrito[k]}</span>` : "");
-  const botones = tams
-    ? tams.map((s) => `<button class="tam" data-add="${p.id}" data-oz="${s.oz}" ${agotado ? "disabled" : ""} aria-label="Agregar ${esc(nombreCorto(p))} de ${s.oz} onzas">${s.oz} oz<b>${fmt(s.precio)}</b>${cant(`${p.id}@${s.oz}`)}</button>`).join("")
-    : `<button class="tam" data-add="${p.id}" ${agotado ? "disabled" : ""} aria-label="Agregar ${esc(nombreCorto(p))}">Agregar<b>${fmt(p.precio)}</b>${cant(p.id)}</button>`;
+  const sel = estadoCarta.tam[p.id] || (tams ? String(tams[0].oz) : null);
+  const clave = sel ? `${p.id}@${sel}` : p.id;
+  const enCarrito = Object.entries(D.carrito).filter(([k]) => k.split("@")[0] === p.id).reduce((a, [, n]) => a + n, 0);
   return `
-    <article class="prod ${agotado ? "agotado" : ""}">
-      <div class="prod-cab"><div><div class="prod-nombre">${esc(p.nombre)}</div>${p.nota ? `<div class="prod-nota">${esc(p.nota)}</div>` : ""}</div><span class="disp ${cl}">${et}</span></div>
-      <div class="tams">${botones}</div>
-      ${p.termo ? `<div class="vaso-nota">♻️ Con tu propio vaso: −${fmt(DESCUENTO_TERMO)}</div>` : ""}
+    <article class="prod ${agotado ? "agotado" : ""}" data-abrir="${p.id}" tabindex="0" aria-label="${esc(p.nombre)}">
+      ${foto(p, "", `<span class="disp ${cl}">${et}</span>`)}
+      <div class="prod-info">
+        <h3>${esc(nombreCorto(p))}</h3>
+        <p class="prod-desc">${esc(DESC[p.id] || p.nota || "")}</p>
+        ${p.termo ? `<span class="sello-vaso">${ico("vaso")} −${fmt(DESCUENTO_TERMO)} con tu vaso</span>` : ""}
+        <div class="prod-pie">
+          ${tams && tams.length > 1 ? `<div class="seg" role="radiogroup" aria-label="Tamaño">${tams.map((s) => `<button role="radio" aria-checked="${String(s.oz) === sel}" class="${String(s.oz) === sel ? "activo" : ""}" data-tam="${p.id}" data-oz="${s.oz}">${s.oz}<small>oz</small></button>`).join("")}</div>` : tams ? `<span class="oz-unico">${tams[0].oz} oz</span>` : ""}
+          <b class="precio">${fmt(precio(p.id, sel))}</b>
+          <button class="mas" data-add="${p.id}" ${sel ? `data-oz="${sel}"` : ""} ${agotado ? "disabled" : ""} aria-label="Agregar ${esc(nombreCorto(p))}${sel ? ` de ${sel} onzas` : ""}">${ico("mas")}${enCarrito ? `<span class="cant">${enCarrito}</span>` : ""}</button>
+        </div>
+      </div>
     </article>`;
 }
-function agregar(id, oz) {
+function abrirProducto(id) {
+  const p = porId(id);
+  const tams = tamanosDe(p);
+  let sel = estadoCarta.tam[id] || (tams ? String(tams[0].oz) : null), cant = 1;
+  const pintar = () => {
+    const [et, cl] = etiquetaStock(id);
+    const agotado = cl === "no";
+    hojaCaja.innerHTML = `
+      <div class="hoja-prod">
+        <button class="cerrar-hoja" id="hp-cerrar" aria-label="Cerrar">${ico("cerrar")}</button>
+        ${foto(p, "grande")}
+        <div class="prod-fila"><h2>${esc(p.nombre)}</h2><span class="disp ${cl}">${et}</span></div>
+        <p class="sub">${esc(DESC[id] || "")}${p.nota ? ` ${esc(p.nota)}` : ""}</p>
+        ${p.termo ? `<span class="sello-vaso">${ico("vaso")} −${fmt(DESCUENTO_TERMO)} si traes tu propio vaso</span>` : (p.mundo === "Bebidas frías para llevar" ? `<p class="mundo-nota">Viene sellada: no aplica el descuento por traer tu vaso.</p>` : "")}
+        ${tams ? `<h3>Tamaño</h3><div class="seg grande" role="radiogroup" aria-label="Tamaño">${tams.map((s) => `<button role="radio" aria-checked="${String(s.oz) === sel}" class="${String(s.oz) === sel ? "activo" : ""}" data-hoz="${s.oz}">${s.oz} oz<small>${fmt(s.precio)}</small></button>`).join("")}</div>` : ""}
+        <div class="fila entre" style="margin:14px 0">
+          <div class="cantidad grande"><button id="hp-menos" aria-label="Quitar uno">${ico("menos")}</button><b>${cant}</b><button id="hp-mas" aria-label="Agregar uno">${ico("mas")}</button></div>
+          <b class="precio grande">${fmt(precio(id, sel) * cant)}</b>
+        </div>
+        <button class="btn ancho" id="hp-agregar" ${agotado ? "disabled" : ""}>${agotado ? "Agotado por hoy" : `Agregar al pedido · ${fmt(precio(id, sel) * cant)}`}</button>
+      </div>`;
+    $("#hp-cerrar").addEventListener("click", () => cerrarHoja());
+    $$("[data-hoz]", hojaCaja).forEach((b) => b.addEventListener("click", () => { sel = b.dataset.hoz; estadoCarta.tam[id] = sel; pintar(); }));
+    $("#hp-menos").addEventListener("click", () => { cant = Math.max(1, cant - 1); pintar(); });
+    $("#hp-mas").addEventListener("click", () => { cant = Math.min(9, cant + 1); pintar(); });
+    $("#hp-agregar").addEventListener("click", () => { let ok = 0; for (let i = 0; i < cant; i++) if (agregar(id, sel, i < cant - 1)) ok++; if (ok) { cerrarHoja(); refrescarCarta(); } });
+  };
+  abrirHoja("");
+  pintar();
+}
+function refrescarCarta() { if (actual !== "carta") return; const y = vista.scrollTop; $("#lista-carta").innerHTML = listaCarta(); vista.scrollTop = y; }
+function agregar(id, oz, silencio = false) {
   const k = oz ? `${id}@${oz}` : id;
   const s = stock(id);
   const ya = Object.entries(D.carrito).filter(([kk]) => (COMBO[kk.split("@")[0]] || kk.split("@")[0]) === (COMBO[id] || id)).reduce((a, [, n]) => a + n, 0);
-  if (s !== Infinity && ya >= s) { aviso(s <= 0 ? "Se agotó por hoy 😕" : `Solo quedan ${s}`); return; }
+  if (s !== Infinity && ya >= s) { aviso(s <= 0 ? "Se agotó por hoy" : `Solo quedan ${s}`); return false; }
   D.carrito[k] = (D.carrito[k] || 0) + 1;
   guardar();
-  aviso(`Agregado: ${conOz(id, oz)}`);
+  if (!silencio) aviso(`Agregado: ${conOz(id, oz)}`);
   pintarCabecera();
   const b = $("#badge-carrito"); b.classList.remove("salta"); void b.offsetWidth; b.classList.add("salta");
+  return true;
 }
 function resumenCarrito() {
-  let total = 0, bebidas = 0, problema = "";
+  let total = 0, problema = "", elegible = null, mejor = 0;
   const t = ahora();
   const usados = {};
   for (const [k, n] of Object.entries(D.carrito)) {
     const [id, oz] = k.split("@");
-    total += precio(id, oz) * n;
-    if (porId(id).termo) bebidas += n;
+    const pr = precio(id, oz);
+    total += pr * n;
+    if (porId(id).termo && pr > mejor) { mejor = pr; elegible = k; } // el vaso se aplica a una bebida preparada del pedido
     const real = COMBO[id] || id;
     usados[real] = (usados[real] || 0) + n;
   }
   for (const [id, n] of Object.entries(usados)) { const s = stock(id, t); if (s !== Infinity && n > s) problema = `${nombreCorto(porId(id))}: solo quedan ${s}. Ajusta tu pedido.`; }
-  const desc = D.conVaso && bebidas ? DESCUENTO_TERMO : 0;
-  return { total: total - desc, desc, bebidas, problema };
+  const desc = D.conVaso && elegible ? DESCUENTO_TERMO : 0;
+  return { total: total - desc, desc, elegible, vasoEn: desc ? elegible : null, problema };
 }
 function horasRecogida(t) {
   const desde = abierto(t) ? Math.ceil((t.min + 15) / 15) * 15 : ABRE + 30;
@@ -631,14 +707,14 @@ function tarjetaPedido(p, corto) {
   const i = orden[e];
   return `
     <div class="tarjeta pedido-activo">
-      <div class="fila entre"><h3>Pedido ${p.codigo}</h3><b style="color:var(--magenta)">${e === "entregado" ? "Entregado" : e === "programado" ? "Programado" : ""}</b></div>
+      <div class="fila entre"><h3>${ico("bolsa")} Pedido ${p.codigo}</h3><b class="estado-pedido ${e}">${{ entregado: "Entregado", programado: "Programado", recibido: "Recibido", preparando: "En preparación", listo: "¡Listo!" }[e]}</b></div>
       <p>${p.lineas.map(esc).join(" · ")} · <b>${fmt(p.total)}</b></p>
-      <p>Recoge: ${esc(p.recogidaTxt)}</p>
+      <p>${ico("reloj")} Recoge: ${esc(p.recogidaTxt)}</p>
       ${corto && e !== "entregado" ? `<button class="enlace" data-ir="pedido" data-p="${p.codigo}">Ver estado</button>` : ""}
       ${!corto ? `
         <ol class="linea-tiempo">${pasos.map(([k, n, s], j) => `<li class="${j < i || e === "entregado" ? "hecho" : j === i ? "actual" : ""}">${n}<small>${s}</small></li>`).join("")}</ol>
         ${e === "programado" ? `<p>Lo empezamos 10 minutos antes de tu hora. <button class="enlace" id="pd-adelantar">Simular que ya es la hora</button></p>` : ""}
-        ${e === "listo" ? `<div class="listo-grande"><div class="ico">🙋</div><h3>¡${esc(D.perfil.nombre.split(" ")[0])}, tu pedido está listo!</h3><p>Pasa por la barra de recogida y muestra el código.</p><div class="codigo-grande">${p.codigo}</div><button class="btn ancho" id="pd-recogido">Ya lo recogí</button></div>` : ""}
+        ${e === "listo" ? `<div class="listo-grande"><span class="grande-ico ok">${ico("barista")}</span><h3>¡${nombre1()}, tu pedido está listo!</h3><p>Pasa por la barra de recogida y muestra el código.</p><div class="codigo-grande">${p.codigo}</div><button class="btn ancho" id="pd-recogido">Ya lo recogí</button></div>` : ""}
         <p class="nota-sim">Tiempos acelerados para la demostración.</p>` : ""}
     </div>`;
 }
@@ -646,19 +722,18 @@ const REGALABLES = ["latte", "capu", "tinto", "milo", "chai", "matcha", "choco",
 function borrador() {
   if (!D.borrador) {
     const t = porId("latte");
-    D.borrador = { para: "Alguien especial", producto: "latte", oz: t?.tamanos?.[0]?.oz || "", nombre: "", mensaje: "", firma: D.perfil?.nombre?.split(" ")[0] || "", tarjeta: true };
+    D.borrador = { para: "Alguien especial", producto: "latte", oz: t?.tamanos?.[0]?.oz || "", nombre: "", mensaje: "", firma: (D.perfil?.nombre || "").split(" ")[0], tarjeta: true };
   }
   return D.borrador;
 }
 function bolsaHoy(t = ahora()) {
   const activa = t.dia.habil && t.min >= BOLSA_DESDE && t.min < BOLSA_HASTA;
-  const pan = Object.keys(STOCK).filter((id) => !TIENDA.has(id)).map((id) => ({ id, s: stock(id, t) })).filter((x) => x.s > 0).sort((a, b) => b.s - a.s);
+  const pan = DEL_DIA.map((id) => ({ id, s: stock(id, t) })).filter((x) => x.s > 0).sort((a, b) => b.s - a.s);
   const unidades = pan.reduce((a, x) => a + x.s, 0);
-  const reservadas = D.bolsas.filter((x) => x.fecha === t.fecha).length;
-  const quedan = Math.max(0, Math.min(12, Math.floor(unidades / 2)) - 0);
+  const quedan = Math.min(12, Math.floor(unidades / 2));
   const ejemplo = pan.slice(0, 2).map((x) => nombreCorto(porId(x.id)));
   const valor = pan.slice(0, 2).reduce((a, x) => a + porId(x.id).precio, 0);
-  return { activa, quedan, ejemplo: ejemplo.length ? ejemplo : ["pan de bono", "brownie"], valor: Math.max(valor, 4000), pan, reservadas };
+  return { activa, quedan, ejemplo: ejemplo.length ? ejemplo : ["pan de bono", "brownie"], valor: Math.max(valor, 4000), pan };
 }
 
 // ------------------------------------------------------------------ imagen del regalo para compartir (1080 × 1920)
@@ -678,49 +753,47 @@ async function imagenRegalo(g0) {
   const c = document.createElement("canvas"); c.width = W; c.height = H;
   const g = c.getContext("2d");
   try { await Promise.race([Promise.all(["800 90px Sora", "700 60px Sora", "italic 600 56px 'Nunito Sans'", "800 40px 'Nunito Sans'"].map((f) => document.fonts.load(f))), espera(2500)]); } catch {}
-  const [logo, iso] = await Promise.all([cargarImg("img/logo-blanco.svg"), cargarImg("img/isotipo.svg")]);
-  // fondo azul Poli con halos de acento
+  const [logo, iso, fotoP] = await Promise.all([cargarImg("img/logo-blanco.svg"), cargarImg("img/isotipo.svg"), cargarImg(`img/carta/${g0.producto}.jpg`)]);
   const fondo = g.createLinearGradient(0, 0, W, H); fondo.addColorStop(0, "#1b5a8c"); fondo.addColorStop(0.45, "#0F385A"); fondo.addColorStop(1, "#061a2c");
   g.fillStyle = fondo; g.fillRect(0, 0, W, H);
   const halo = (x, y, r, col) => { const h = g.createRadialGradient(x, y, 0, x, y, r); h.addColorStop(0, col); h.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = h; g.fillRect(0, 0, W, H); };
   halo(1000, 1700, 700, "rgba(224,0,110,.35)"); halo(80, 260, 620, "rgba(21,190,206,.28)"); halo(900, 420, 380, "rgba(251,175,23,.14)");
   if (iso) { g.save(); g.globalAlpha = 0.07; g.drawImage(iso, 430, 520, 900, 900); g.restore(); }
-  if (logo) { const w = 560, h = w / 3.637; g.drawImage(logo, (W - w) / 2, 120, w, h); }
+  if (logo) { const w = 560, h = w / 3.637; g.drawImage(logo, (W - w) / 2, 110, w, h); }
   g.textAlign = "center"; g.fillStyle = "#15BECE"; g.font = "800 40px 'Nunito Sans', sans-serif";
-  g.fillText("T E   R E G A L A R O N   U N   C A F É", W / 2, 420);
-  g.fillStyle = "#FFFFFF"; g.font = "800 112px Sora, sans-serif";
+  g.fillText("T E   R E G A L A R O N   U N   C A F É", W / 2, 400);
   const para = `Para ${g0.nombre}${g0.para === "Alguien especial" ? " ❤" : ""}`;
-  let fs = 112; while (g.measureText(para).width > 960 && fs > 60) { fs -= 4; g.font = `800 ${fs}px Sora, sans-serif`; }
-  g.fillText(para, W / 2, 560);
-  // producto
+  g.fillStyle = "#FFFFFF"; ajustar(g, para, 960, 112, "800", "Sora, sans-serif"); g.fillText(para, W / 2, 530);
+  // foto del producto (si ya está renderizada) en un círculo
+  let y = 590;
+  if (fotoP) { g.save(); g.beginPath(); g.arc(W / 2, y + 120, 120, 0, Math.PI * 2); g.closePath(); g.clip(); g.drawImage(fotoP, W / 2 - 120, y, 240, 240); g.restore(); g.strokeStyle = "rgba(255,255,255,.85)"; g.lineWidth = 8; g.beginPath(); g.arc(W / 2, y + 120, 120, 0, Math.PI * 2); g.stroke(); y += 270; }
   const prod = `${conOz(g0.producto, g0.oz)}${g0.tarjeta ? " + chocolatina" : ""}`;
   ajustar(g, prod, 860, 44, "800", "'Nunito Sans', sans-serif");
   const pw = Math.min(980, g.measureText(prod).width + 80);
-  g.fillStyle = "rgba(251,175,23,.16)"; rr(g, (W - pw) / 2, 610, pw, 86, 43); g.fill();
-  g.fillStyle = "#FBAF17"; g.fillText(prod, W / 2, 667);
-  // mensaje
-  g.fillStyle = "#FFF4E3"; g.font = "italic 600 58px 'Nunito Sans', sans-serif";
-  const lineas = envolver(g, `“${g0.mensaje || "¡Disfrútalo!"}”`, 880).slice(0, 6);
-  lineas.forEach((l, i) => g.fillText(l, W / 2, 820 + i * 78));
-  const yFirma = 820 + lineas.length * 78 + 30;
-  g.fillStyle = "#FBAF17"; g.font = "800 54px Sora, sans-serif"; g.fillText(`— ${g0.firma}`, W / 2, yFirma);
-  // tarjeta del código con QR
-  const y0 = Math.max(yFirma + 70, 1250);
-  g.fillStyle = "#FFFFFF"; rr(g, 90, y0, 900, 470, 44); g.fill();
-  g.textAlign = "left"; g.fillStyle = "#5C6B7A"; g.font = "800 34px 'Nunito Sans', sans-serif"; g.fillText("Tu código", 150, y0 + 90);
-  g.fillStyle = "#0F385A"; g.font = "800 92px Sora, sans-serif"; g.fillText(g0.codigo, 150, y0 + 200);
+  g.fillStyle = "rgba(251,175,23,.16)"; rr(g, (W - pw) / 2, y, pw, 86, 43); g.fill();
+  g.fillStyle = "#FBAF17"; g.fillText(prod, W / 2, y + 57);
+  g.fillStyle = "#FFF4E3"; g.font = "italic 600 56px 'Nunito Sans', sans-serif";
+  const lineas = envolver(g, `“${g0.mensaje || "¡Disfrútalo!"}”`, 880).slice(0, fotoP ? 4 : 6);
+  const yM = y + 190;
+  lineas.forEach((l, i) => g.fillText(l, W / 2, yM + i * 74));
+  const yFirma = yM + lineas.length * 74 + 24;
+  g.fillStyle = "#FBAF17"; g.font = "800 52px Sora, sans-serif"; g.fillText(`— ${g0.firma}`, W / 2, yFirma);
+  const y0 = Math.min(Math.max(yFirma + 60, 1250), 1360);
+  g.fillStyle = "#FFFFFF"; rr(g, 90, y0, 900, 440, 44); g.fill();
+  g.textAlign = "left"; g.fillStyle = "#5C6B7A"; g.font = "800 34px 'Nunito Sans', sans-serif"; g.fillText("Tu código", 150, y0 + 85);
+  g.fillStyle = "#0F385A"; g.font = "800 92px Sora, sans-serif"; g.fillText(g0.codigo, 150, y0 + 190);
   const corto = g0.venceClave ? (([a, m, d]) => `${+d} ${MESES[+m - 1].slice(0, 3)} ${a}`)(g0.venceClave.split("-")) : g0.vence;
-  g.fillStyle = "#E0006E"; ajustar(g, `Vale hasta el ${corto}`, 400, 34, "800", "'Nunito Sans', sans-serif"); g.fillText(`Vale hasta el ${corto}`, 150, y0 + 265);
+  g.fillStyle = "#E0006E"; ajustar(g, `Vale hasta el ${corto}`, 400, 34, "800", "'Nunito Sans', sans-serif"); g.fillText(`Vale hasta el ${corto}`, 150, y0 + 252);
   g.fillStyle = "#1D2733"; g.font = "600 30px 'Nunito Sans', sans-serif";
-  g.fillText("Muéstralo en la barra de Café Poli", 150, y0 + 330); g.fillText("City Campus, piso 2", 150, y0 + 372);
+  g.fillText("Muéstralo en la barra de Café Poli", 150, y0 + 318); g.fillText("City Campus, piso 2", 150, y0 + 360);
   if (typeof window.qrcode === "function") {
     const q = window.qrcode(0, "M"); q.addData(urlReclamar(g0.codigo)); q.make();
-    const n = q.getModuleCount(), tam = 300, s = tam / n, qx = 990 - 60 - tam, qy = y0 + 85;
+    const n = q.getModuleCount(), tam = 300, s = tam / n, qx = 990 - 60 - tam, qy = y0 + 70;
     g.fillStyle = "#0F385A";
-    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (q.isDark(y, x)) g.fillRect(qx + x * s, qy + y * s, Math.ceil(s), Math.ceil(s));
+    for (let yy = 0; yy < n; yy++) for (let x = 0; x < n; x++) if (q.isDark(yy, x)) g.fillRect(qx + x * s, qy + yy * s, Math.ceil(s), Math.ceil(s));
   }
   g.textAlign = "center"; g.fillStyle = "rgba(255,244,227,.85)"; g.font = "700 36px 'Nunito Sans', sans-serif";
-  g.fillText("Escanea el QR o muestra el código en la barra", W / 2, Math.min(1850, y0 + 560));
+  g.fillText("Escanea el QR o muestra el código en la barra", W / 2, Math.min(1860, y0 + 520));
   return new Promise((ok) => c.toBlob((b) => ok(b), "image/png"));
 }
 // el enlace del regalo lleva sus datos: quien lo abre en su celular ve su tarjeta aunque no tenga la app
@@ -729,7 +802,7 @@ const b64 = { a: (o) => { const b = new TextEncoder().encode(JSON.stringify(o));
 const datosRegalo = (g) => ({ c: g.codigo, n: g.nombre, p: g.producto, o: g.oz, m: g.mensaje, f: g.firma, v: g.vence, k: g.tarjeta ? 1 : 0, e: g.para === "Alguien especial" ? 1 : 0 });
 const urlRegalo = (g) => `${location.origin}${location.pathname}#recibido=${b64.a(datosRegalo(g))}`;
 const urlReclamar = (cod) => { const g = D.regalos.find((x) => x.codigo === cod); return g ? urlRegalo(g) : `${location.origin}${location.pathname}#reclamar=${encodeURIComponent(cod)}`; };
-const textoRegalo = (g) => `🎁 ${g.firma} te regaló ${conOz(g.producto, g.oz)} en Café Poli (City Campus, piso 2).\n“${g.mensaje}”\nTu código: ${g.codigo} · muéstralo en la barra. Vale hasta el ${g.vence}.\n${urlRegalo(g)}`;
+const textoRegalo = (g) => `${g.firma} te regaló ${conOz(g.producto, g.oz)} en Café Poli (City Campus, piso 2).\n“${g.mensaje}”\nTu código: ${g.codigo} · muéstralo en la barra. Vale hasta el ${g.vence}.\n${urlRegalo(g)}`;
 function fechaMas(t, dias) { const f = new Date(Date.UTC(t.a, t.m - 1, t.d + dias)); return `${f.getUTCDate()} de ${MESES[f.getUTCMonth()]} de ${f.getUTCFullYear()}`; }
 
 // ------------------------------------------------------------------ comportamiento de cada vista
@@ -743,13 +816,27 @@ const ENLACES = {
   },
   carta: () => {
     const lista = $("#lista-carta");
-    $("#buscar").addEventListener("input", (e) => { estadoCarta.q = e.target.value; $$("[data-mundo]").forEach((x) => x.classList.toggle("activo", e.target.value.trim() ? x.dataset.mundo === "Todo" : x.dataset.mundo === estadoCarta.mundo)); lista.innerHTML = listaCarta(); });
-    $$("[data-mundo]").forEach((b) => b.addEventListener("click", () => { estadoCarta.mundo = b.dataset.mundo; $$("[data-mundo]").forEach((x) => x.classList.toggle("activo", x === b)); lista.innerHTML = listaCarta(); }));
-    lista.addEventListener("click", (e) => { const b = e.target.closest("[data-add]"); if (!b) return; agregar(b.dataset.add, b.dataset.oz); const y = vista.scrollTop; lista.innerHTML = listaCarta(); vista.scrollTop = y; });
+    const marcar = () => $$(".chip-mundo").forEach((x) => { const si = !estadoCarta.q.trim() && +x.dataset.mundo === estadoCarta.mundo; x.classList.toggle("activo", si); x.setAttribute("aria-selected", String(si)); if (si) x.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" }); });
+    $("#buscar").addEventListener("input", (e) => { estadoCarta.q = e.target.value; marcar(); lista.innerHTML = listaCarta(); });
+    $$(".chip-mundo").forEach((b) => b.addEventListener("click", () => { estadoCarta.mundo = +b.dataset.mundo; estadoCarta.q = ""; $("#buscar").value = ""; marcar(); lista.innerHTML = listaCarta(); vista.scrollTo({ top: 0, behavior: "smooth" }); }));
+    lista.addEventListener("click", (e) => {
+      const t = e.target.closest("[data-tam]");
+      if (t) { estadoCarta.tam[t.dataset.tam] = t.dataset.oz; refrescarCarta(); return; }
+      const b = e.target.closest("[data-add]");
+      if (b) { if (agregar(b.dataset.add, b.dataset.oz)) refrescarCarta(); return; }
+      const a = e.target.closest("[data-abrir]");
+      if (a) abrirProducto(a.dataset.abrir);
+    });
+    lista.addEventListener("keydown", (e) => { const a = e.target.closest?.("[data-abrir]"); if (a && e.target === a && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); abrirProducto(a.dataset.abrir); } });
+    // deslizar a los lados cambia de categoría
+    let x0 = null;
+    lista.addEventListener("touchstart", (e) => { x0 = e.touches.length === 1 ? [e.touches[0].clientX, e.touches[0].clientY] : null; }, { passive: true });
+    lista.addEventListener("touchend", (e) => { if (!x0 || estadoCarta.q) return; const dx = e.changedTouches[0].clientX - x0[0], dy = e.changedTouches[0].clientY - x0[1]; if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.6) { estadoCarta.mundo = (estadoCarta.mundo + (dx < 0 ? 1 : -1) + CARTA.length) % CARTA.length; marcar(); lista.innerHTML = listaCarta(); vista.scrollTo({ top: 0 }); } x0 = null; }, { passive: true });
+    setTimeout(marcar, 30);
   },
   vaso: () => { $$("[data-add]").forEach((b) => b.addEventListener("click", () => { agregar(b.dataset.add, b.dataset.oz); })); },
   pedir: () => {
-    $$("[data-mas]").forEach((b) => b.addEventListener("click", () => { const [id, oz] = b.dataset.mas.split("@"); agregar(id, oz); ir("pedir"); }));
+    $$("[data-mas]").forEach((b) => b.addEventListener("click", () => { const [id, oz] = b.dataset.mas.split("@"); agregar(id, oz, true); ir("pedir"); }));
     $$("[data-menos]").forEach((b) => b.addEventListener("click", () => { const k = b.dataset.menos; D.carrito[k]--; if (D.carrito[k] <= 0) delete D.carrito[k]; guardar(); ir("pedir"); }));
     $("#chk-vaso")?.addEventListener("change", (e) => { D.conVaso = e.target.checked; guardar(); ir("pedir"); });
     $$("[data-rec]").forEach((b) => b.addEventListener("click", () => { D.recogida.tipo = b.dataset.rec; if (b.dataset.rec === "hora" && !D.recogida.hora) D.recogida.hora = horasRecogida(ahora())[0]; guardar(); ir("pedir"); }));
@@ -774,7 +861,7 @@ const ENLACES = {
         preparaEn = programado ? now + 86400000 : now + 4000; listoEn = preparaEn + 16000;
       }
       for (const [k, n] of Object.entries(D.carrito)) descontar(k.split("@")[0], n, t);
-      const p = { codigo: `A${String(40 + D.pedidos.length * 7 % 60)}`, lineas, total: r.total, pago: D.pago, recogidaTxt, programado, preparaEn, listoEn, creado: now };
+      const p = { codigo: `A${40 + (D.pedidos.length * 7) % 60}`, lineas, total: r.total, pago: D.pago, recogidaTxt, programado, preparaEn, listoEn, creado: now };
       D.pedidos.push(p);
       const pts = sumarPuntos(r.total, lineas.map((l) => l.replace(/^\d+ × /, "")).join(", "));
       D.carrito = {}; D.conVaso = false;
@@ -792,8 +879,8 @@ const ENLACES = {
     const r = borrador();
     const total = () => fmt(precio(r.producto, r.oz) + (r.tarjeta ? DETALLE_REGALO.precio : 0));
     $$("[data-para]").forEach((b) => b.addEventListener("click", () => { r.para = b.dataset.para; guardar(); ir("regalar"); }));
-    $("#rg-prod").addEventListener("change", (e) => { r.producto = e.target.value; r.oz = tamanosDe(porId(r.producto))?.[0]?.oz || ""; guardar(); ir("regalar"); });
-    $$("[data-oz]").forEach((b) => b.addEventListener("click", () => { r.oz = b.dataset.oz; guardar(); ir("regalar"); }));
+    $$("[data-prod]").forEach((b) => b.addEventListener("click", () => { r.producto = b.dataset.prod; r.oz = tamanosDe(porId(r.producto))?.[0]?.oz || ""; guardar(); const y = vista.scrollTop; ir("regalar"); vista.scrollTop = y; }));
+    $$("[data-oz]").forEach((b) => b.addEventListener("click", () => { r.oz = b.dataset.oz; guardar(); const y = vista.scrollTop; ir("regalar"); vista.scrollTop = y; }));
     $("#rg-nombre").addEventListener("input", (e) => { r.nombre = e.target.value; guardar(); });
     $("#rg-firma").addEventListener("input", (e) => { r.firma = e.target.value; guardar(); });
     $("#rg-msj").addEventListener("input", (e) => { r.mensaje = e.target.value; $("#rg-cont").textContent = `${r.mensaje.length}/120`; guardar(); });
@@ -843,18 +930,19 @@ const ENLACES = {
       const k = D.canjes.find((x) => x.codigo === c);
       const b = D.bolsas.find((x) => x.codigo === c);
       const t = ahora();
+      const caja = (icono, tono, titulo, html) => `<div class="tarjeta destacada borde-${tono}">${fichaIco(icono, tono)}<div><h3>${titulo}</h3>${html}</div></div>`;
       if (g) {
-        if (g.usado) res.innerHTML = `<div class="tarjeta"><h3>⚠️ Ya se reclamó</h3><p>Este regalo para ${esc(g.nombre)} se entregó el ${esc(g.usado)}.</p></div>`;
-        else if (g.venceClave && t.fecha > g.venceClave) res.innerHTML = `<div class="tarjeta"><h3>⌛ Venció</h3><p>Valía hasta el ${esc(g.vence)}.</p></div>`;
+        if (g.usado) res.innerHTML = caja("alerta", "oro", "Ya se reclamó", `<p>Este regalo para ${esc(g.nombre)} se entregó el ${esc(g.usado)}.</p>`);
+        else if (g.venceClave && t.fecha > g.venceClave) res.innerHTML = caja("reloj", "oro", "Venció", `<p>Valía hasta el ${esc(g.vence)}.</p>`);
         else {
-          res.innerHTML = `<div class="tarjeta" style="border-left:6px solid var(--verde)"><h3>✅ Código válido</h3><p><b>${esc(conOz(g.producto, g.oz))}${g.tarjeta ? " + tarjeta impresa y chocolatina" : ""}</b> para <b>${esc(g.nombre)}</b>, de ${esc(g.firma)}.</p><p style="margin-top:6px">«${esc(g.mensaje)}»</p></div><button class="btn ancho" id="rc-entregar">Entregar por su nombre</button>`;
-          $("#rc-entregar").addEventListener("click", () => { g.usado = fechaLarga(t); descontar(g.producto, 1, t); guardar(); res.innerHTML = `<div class="tarjeta listo-grande"><div class="ico">🎉</div><h3>¡${esc(g.nombre)}, esto te lo mandó ${esc(g.firma)}!</h3><p>Entregado. El inventario ya descontó el producto.</p></div>`; });
+          res.innerHTML = caja("checkCirculo", "verde", "Código válido", `<p><b>${esc(conOz(g.producto, g.oz))}${g.tarjeta ? " + tarjeta impresa y chocolatina" : ""}</b> para <b>${esc(g.nombre)}</b>, de ${esc(g.firma)}.</p><p style="margin-top:6px">«${esc(g.mensaje)}»</p>`) + `<button class="btn ancho" id="rc-entregar">Entregar por su nombre</button>`;
+          $("#rc-entregar").addEventListener("click", () => { g.usado = fechaLarga(t); descontar(g.producto, 1, t); guardar(); res.innerHTML = caja("confeti", "magenta", `¡${esc(g.nombre)}, esto te lo mandó ${esc(g.firma)}!`, "<p>Entregado. El inventario ya descontó el producto.</p>"); });
         }
       } else if (k || b) {
         const x = k || b;
-        if (x.usado) res.innerHTML = `<div class="tarjeta"><h3>⚠️ Ya se usó</h3></div>`;
-        else { res.innerHTML = `<div class="tarjeta" style="border-left:6px solid var(--verde)"><h3>✅ Código válido</h3><p>${k ? "Tinto gratis del Club Colibrí." : `Bolsa del final del día: ${x.items.map(esc).join(" y ")}.`}</p></div><button class="btn ancho" id="rc-entregar">Entregar</button>`; $("#rc-entregar").addEventListener("click", () => { x.usado = true; guardar(); res.innerHTML = `<div class="tarjeta listo-grande"><div class="ico">🎉</div><h3>¡Entregado!</h3></div>`; }); }
-      } else res.innerHTML = `<div class="tarjeta"><h3>No encontramos ese código</h3><p>En este prototipo los códigos viven en el celular donde se crearon. En la barra real, la caja los valida en línea.</p></div>`;
+        if (x.usado) res.innerHTML = caja("alerta", "oro", "Ya se usó", "");
+        else { res.innerHTML = caja("checkCirculo", "verde", "Código válido", `<p>${k ? "Tinto gratis del Club Colibrí." : `Bolsa del final del día: ${x.items.map(esc).join(" y ")}.`}</p>`) + `<button class="btn ancho" id="rc-entregar">Entregar</button>`; $("#rc-entregar").addEventListener("click", () => { x.usado = true; guardar(); res.innerHTML = caja("confeti", "magenta", "¡Entregado!", ""); }); }
+      } else res.innerHTML = caja("info", "cian", "No encontramos ese código", "<p>En este prototipo los códigos viven en el celular donde se crearon. En la barra real, la caja los valida en línea.</p>");
     };
     $("#rc-validar").addEventListener("click", validar);
     $("#rc-cod").addEventListener("keydown", (e) => { if (e.key === "Enter") validar(); });
@@ -865,7 +953,7 @@ const ENLACES = {
       if (D.puntos < 100) return;
       D.puntos -= 100; D.historial.push(["Canje: tinto gratis", -100]);
       const c = { codigo: codigo("TINTO", 3), usado: false }; D.canjes.push(c); guardar();
-      abrirHoja(`<div class="listo-grande"><div class="ico">☕</div><h2>¡Tinto canjeado!</h2><p class="sub">Muestra este código en la barra:</p><div class="codigo-grande">${c.codigo}</div><button class="btn ancho" id="ok-canje">Listo</button></div>`);
+      abrirHoja(`<div class="listo-grande"><span class="grande-ico ok">${ico("pocillo")}</span><h2>¡Tinto canjeado!</h2><p class="sub">Muestra este código en la barra:</p><div class="codigo-grande">${c.codigo}</div><button class="btn ancho" id="ok-canje">Listo</button></div>`);
       $("#ok-canje").addEventListener("click", () => { cerrarHoja(); ir("puntos"); });
       confeti();
     });
@@ -915,7 +1003,7 @@ function enlazarDemo() {
   $("#dm-aplicar")?.addEventListener("click", () => aplicar($("#dm-fecha").value, $("#dm-hora").value || "12:00"));
   $("#dm-real")?.addEventListener("click", () => { D.demo = null; guardar(); ir("perfil"); revisarCumple(); });
   $("#dm-reiniciar")?.addEventListener("click", () => { const p = D.perfil, dm = D.demo; D = base(); D.perfil = p; D.demo = dm; guardar(); aviso("Demo reiniciada"); ir("perfil"); });
-  // fechas de prueba: un martes hábil, un domingo y el festivo del 8 de diciembre (cambia tu cumpleaños de prueba)
+  // fechas de prueba: un martes hábil, un domingo y el festivo del 8 de diciembre (cambian tu cumpleaños de prueba)
   const P = { "cumple-habil": ["2026-11-17", "09:30", true], "cumple-domingo": ["2026-11-22", "09:30", true], "cumple-festivo": ["2026-12-08", "09:30", true] };
   $$("[data-dm]").forEach((b) => b.addEventListener("click", () => {
     const k = b.dataset.dm, t = ahora();
@@ -930,8 +1018,8 @@ function enlazarDemo() {
 // ------------------------------------------------------------------ arranque
 function rutaInicial() {
   const h = decodeURIComponent(location.hash.slice(1));
-  const [n, p] = h.split("=");
-  return { n: n || "inicio", p: p || null };
+  const i = h.indexOf("=");
+  return i < 0 ? { n: h || "inicio", p: null } : { n: h.slice(0, i), p: h.slice(i + 1) || null };
 }
 addEventListener("hashchange", () => { const r = rutaInicial(); if (r.n !== actual || r.p !== param) ir(r.n, r.p, { historia: false }); });
 const r0 = rutaInicial();

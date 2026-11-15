@@ -185,16 +185,27 @@ body.con-escena .telefono { height: min(100cqh, 760px); width: auto; aspect-rati
   .lg-sello { font-size: 2.8cqw; }
 }
 
-/* maqueta 3D */
-#maqueta { grid-template-rows: minmax(0, 1fr) auto; gap: 8px; }
-.maq-area { position: relative; width: 100cqw; height: 100%; min-height: 0; overflow: hidden; border-radius: 18px; background: radial-gradient(120% 120% at 50% 30%, #fbf7f1, #dfe5ea); touch-action: none; cursor: grab; display: grid; place-items: center; box-shadow: 0 30px 70px rgba(0, 0, 0, .45); }
-.maq-area:active { cursor: grabbing; }
-#maq-img { max-width: 100%; max-height: 100%; object-fit: contain; user-select: none; pointer-events: none; transition: transform .12s; }
-.maq-aviso { position: absolute; left: 50%; bottom: 58px; transform: translateX(-50%); margin: 0; background: rgba(15, 56, 90, .88); color: #fff; font-weight: 700; font-size: .82rem; padding: 7px 14px; border-radius: 999px; white-space: nowrap; max-width: calc(100% - 24px); overflow: hidden; text-overflow: ellipsis; pointer-events: none; animation: entra .6s both; }
-.maq-botones { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
-.maq-botones .chip { background: rgba(255, 255, 255, .14); color: #fff; }
-.maq-botones .chip:hover { background: rgba(255, 255, 255, .26); }
-@media (max-width: 640px) { .maq-aviso { font-size: .7rem; white-space: normal; text-align: center; bottom: 52px; } }
+/* maqueta 3D en tiempo real: ocupa todo el escenario, sin marco */
+#maqueta { place-items: stretch; }
+body[data-escena="maqueta"] #velo { background: radial-gradient(120% 100% at 50% 40%, #FFF4E3 0%, #E9DFD0 60%, #D7CCBD 100%); opacity: 1; }
+body[data-escena="maqueta"] .escenario#maqueta { top: var(--sup); left: 0; right: 0; bottom: var(--gui); }
+@media (min-width: 900px) { body[data-escena="maqueta"] .escenario#maqueta { right: 440px; bottom: 0; } }
+.maq3d-area { position: relative; width: 100%; height: 100%; touch-action: none; }
+.maq3d-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; outline: none; }
+.maq3d-canvas:active { cursor: grabbing; }
+.maq3d-carga { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); width: min(320px, 80%); text-align: center; color: var(--navy); font-weight: 800; }
+.maq3d-carga img { width: 100%; border-radius: 12px; margin-top: 8px; }
+.maq3d-botones { position: absolute; left: 0; right: 0; bottom: 10px; display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; padding: 0 10px; }
+.maq3d-botones .chip { background: rgba(15, 56, 90, .88); color: #fff; box-shadow: 0 4px 12px rgba(15, 56, 90, .25); }
+.maq3d-botones .chip:hover, .maq3d-botones .chip.activo { background: var(--magenta); }
+.maq-aviso { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); margin: 0; background: rgba(15, 56, 90, .9); color: #fff; font-weight: 700; font-size: .82rem; padding: 7px 14px; border-radius: 999px; max-width: calc(100% - 24px); text-align: center; pointer-events: none; animation: entra .6s both; }
+@media (max-width: 899px) {
+  body[data-escena="maqueta"] .burbuja p { display: none; }
+  body[data-escena="maqueta"] .burbuja h2 { font-size: .95rem; }
+  .maq3d-botones { bottom: 6px; gap: 4px; }
+  .maq3d-botones .chip { padding: 5px 9px; font-size: .72rem; }
+  .maq-aviso { font-size: .7rem; top: 8px; }
+}
 
 /* encabezado compacto en celular: marca e íconos en una fila */
 @media (max-width: 640px) {
@@ -218,3 +229,8 @@ body.con-escena .telefono { height: min(100cqh, 760px); width: auto; aspect-rati
   .qa-info h3 { font-size: 1.3rem; } .qa-info ul { text-align: left; font-size: .86rem; margin-bottom: 10px; }
 }
 .cumple-img { width: 120px; height: 120px; display: block; margin: 0 auto 8px; }
+
+/* fotos reales de producto en el celular del recorrido */
+.producto .foto.foto-real { background: #F5EBDD; overflow: hidden; padding: 0; width: 52px; height: 52px; }
+.producto .foto.foto-real img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.producto .foto.sin-foto { background: linear-gradient(135deg, #F5EBDD, #E9DCC6); }

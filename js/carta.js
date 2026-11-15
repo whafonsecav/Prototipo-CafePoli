@@ -8,14 +8,14 @@ export const TABS_CARTA = [
     resumen: "Cafés de origen comprados directo a caficultores, en tres tamaños: el tinto de 7 onzas vale 2.000 pesos, y para la semana de parciales está el Café Parcial, uno por persona." },
   { id: "te", nombre: "Té", mundos: ["Ritual del té"],
     resumen: "El ritual del té tiene dieciséis tés e infusiones en hoja: negros, verdes y blanco, frutales sin cafeína, lattes de té, tés helados y la cata de tres tés para compartir." },
-  { id: "casa", nombre: "De la casa", mundos: ["Bebidas de la casa"],
-    resumen: "Lo de la casa colombiana para los que no toman café: aromática, agua de panela, chocolate con queso, Milo caliente y Milo frío, avena y jugos naturales." },
-  { id: "comidas", nombre: "Antojos", mundos: ["Antojos colombianos"],
-    resumen: "Antojos recién horneados, del desayuno a la tarde: pan de bono, pan de yuca, buñuelo, almojábana, arepas, empanadas y sándwich." },
+  { id: "casa", nombre: "De la casa y frías", mundos: ["Bebidas de la casa", "Bebidas frías para llevar"],
+    resumen: "Lo de la casa colombiana para los que no toman café: aromática, agua de panela, chocolate con queso, Milo caliente y Milo frío, avena y jugos naturales. Y para el que va de afán, bebidas frías selladas: agua, gaseosa, malta, jugo en caja, té frío e hidratante." },
+  { id: "comidas", nombre: "Antojos y paquetes", mundos: ["Antojos colombianos", "Snacks de paquete"],
+    resumen: "Antojos recién horneados, del desayuno a la tarde: pan de bono, pan de yuca, buñuelo, almojábana, arepas, empanadas y sándwich. Y los de paquete de siempre para el antojo entre clases: papas, platanitos, inflados de queso, galletas, maní, chocolatina, barra de cereal y gomitas, en la canasta junto a la caja." },
   { id: "postres", nombre: "Postres y combos", mundos: ["Postres para compartir", "Combos"],
     resumen: "Postres para compartir de la tarde a la noche, el postre para dos con dos tenedores y los combos de la casa, como la pausa: tinto con pan de bono." },
   { id: "tienda", nombre: "Tienda", mundos: ["Tienda Café Poli"],
-    resumen: "En la tienda está el vaso reutilizable en 8, 12 o 16 onzas, el termo y el pocillo de porcelana. Si traes tu propio vaso, cualquier bebida vale 300 pesos menos, en cualquier tamaño." },
+    resumen: "En la tienda está el vaso reutilizable en 8, 12 o 16 onzas, el termo y el pocillo de porcelana. Si traes tu propio vaso, las bebidas preparadas valen 300 pesos menos, en cualquier tamaño." },
 ];
 
 const ICONOS = {
@@ -27,6 +27,8 @@ const ICONOS = {
   torta: '<path d="M4 20h16v-7H4zM4 15c2 1.5 4 1.5 6 0s4-1.5 6 0 3 1 4 0M8 13V9M12 13V8M16 13V9M8 6.5v.5M12 5.5v.5M16 6.5v.5"/>',
   combo: '<path d="M3 11h9v3a4.5 4.5 0 0 1-4.5 4.5h0A4.5 4.5 0 0 1 3 14zM12 12h1.5a2 2 0 0 1 0 4H12M14 20c0-3 2.7-5 5-5h2v5z"/>',
   vaso: '<path d="M6 5h12l-1.6 16H7.6zM5 5h14M8 2h8l1 3H7zM6.6 11h10.8"/>',
+  paquete: '<path d="M6 3h12l-1 4 1 13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1l1-13zM7 7h10M10 11c1 1.2 3 1.2 4 0"/>',
+  botella: '<path d="M10 2h4v3l1.5 2.5V20a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2V7.5L10 5zM8.5 11h7M8.5 16h7"/>',
 };
 const ico = (n, cls = "cp-ico") => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONOS[n] || ICONOS.taza}</svg>`;
 const claro = (hex) => { const n = parseInt(hex.slice(1), 16); return 0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255) > 150; };
@@ -95,7 +97,7 @@ export function montarCarta(contenedor, { alCerrar } = {}) {
       </nav>
     </div>
     <div class="cp-cuerpo" tabindex="-1">
-      <div class="cp-vaso-cinta">${ico("vaso", "cp-ico-c")}<div><b>Trae tu propio vaso: −$${DESCUENTO_TERMO}</b><span>En cualquier bebida y en cualquier tamaño. Tú eliges las onzas.</span></div></div>
+      <div class="cp-vaso-cinta">${ico("vaso", "cp-ico-c")}<div><b>Trae tu propio vaso: −$${DESCUENTO_TERMO}</b><span>En las bebidas preparadas y en cualquier tamaño: tú eliges las onzas. No aplica a las bebidas frías selladas.</span></div></div>
       <div class="cp-grid"></div>
       <div class="cp-pie">
         <div class="cp-qr">${qr()}<span><b>Escanea el QR de tu mesa</b>Pide y paga en la app, y recoge en la barra sin hacer fila.</span></div>
