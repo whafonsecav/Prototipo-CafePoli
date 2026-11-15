@@ -1,34 +1,46 @@
 // Simulación de la app de Café Poli dentro de un celular.
+// Dos modos: «libre» (la persona toca y Poligreca narra cada pantalla) y «guiado» (el recorrido maneja la app paso a paso
+// con un guion por paso; Siguiente y Atrás del recorrido siempre funcionan y cada paso deja la app en un estado fijo).
 import { CARTA, DESCUENTO_TERMO, DETALLE_REGALO, fmt } from "./datos.js";
 
 const capa = document.getElementById("telefono-capa");
 const pant = document.getElementById("telefono-pantalla");
 const btnCerrar = document.getElementById("telefono-cerrar");
+const aviso = document.getElementById("tel-aviso");
 
 const TODOS = CARTA.flatMap((c) => c.items);
-const porId = (id) => TODOS.find((p) => p.id === id);
+const porId = (id) => TODOS.find((p) => p.id === id) || { id, nombre: id, precio: 0 };
+const tamanos = (p) => (Array.isArray(p.tamanos) && p.tamanos.length ? p.tamanos : null);
+const precioDe = (p, oz) => { const t = tamanos(p); if (!t || !oz) return p.precio; const s = t.find((x) => String(x.oz) === String(oz)); return s ? s.precio : p.precio; };
+const nombreCorto = (p) => p.nombre.split(":")[0].replace(/ \(.*\)/, "");
 
-const estado = {
+const ESTADO0 = () => ({
   usuario: "Andrés",
   puntos: 86,
   carrito: {},
-  conTermo: false,
-  hora: "En el descanso (7:30 p. m.)",
+  conVaso: false,
+  hora: "En el descanso (8:20 p. m.)",
   pago: "Nequi",
   regalo: {
     para: "Alguien especial", producto: "latte", tarjeta: true, nombre: "Mary",
     cel: "Mary ❤ · de tus contactos", mensaje: "Para que mañana arranques con todo. Esta pausa va por mí. ¿Nos vemos en Modo Conexión?", firma: "Andrés",
   },
   historial: [["La pausa", 3], ["Capuchino", 4], ["Tinto", 2], ["Combo Parcial", 6]],
-  ultimoCodigo: null,
-};
+  ultimoCodigo: "CP-7KQ4",
+  ultimoPedido: { codigo: "A47", hora: "En el descanso (8:20 p. m.)", puntos: 6 },
+  bolsa: { quedan: 6, codigo: "BF-218" },
+  relojFijo: null,
+});
+let estado = ESTADO0();
 
 let alCerrar = null;
 let narrador = null;
+let guiado = false;
 export function alNarrar(fn) { narrador = fn; }
+// Narración del modo libre (en el recorrido guiado habla el paso, no la pantalla).
 const NARRA = {
-  inicio: ["La app de Café Poli", "Desde aquí pides y recoges sin fila, regalas un Café Poli, ves tus Puntos Colibrí y lo que te ahorras con tu termo."],
-  menu: ["La carta en tu celular", "La carta va por mundos de color, con los mismos precios de la barra. Si la bebida aplica, ves cuánto vale con tu termo. Toca el signo más para agregar."],
+  inicio: ["La app de Café Poli", "Desde aquí pides y recoges sin fila, regalas un Café Poli, ves tus Puntos Colibrí y lo que te ahorras si traes tu propio vaso."],
+  menu: ["La carta en tu celular", "La misma carta de la barra, por mundos de color y por tamaño en onzas. Si la bebida aplica, ves cuánto vale con tu vaso."],
   pedido: ["Elige la hora y paga", "Escoges cuándo recoger, por ejemplo en el descanso, y pagas con Nequi, Daviplata, Bre-B o tarjeta. El pedido entra directo a la caja y al inventario."],
   pagado: ["¡Listo!", "La barra prepara tu pedido a tiempo y te lo entregan por tu nombre. Además sumaste Puntos Colibrí."],
   regalo: ["Regala un Café Poli", "Eliges para quién es, qué le das y escribes tu mensaje. Lo firmas tú: aquí no hay regalos anónimos."],
@@ -36,96 +48,217 @@ const NARRA = {
   whatsapp: ["Así le llega", "Le llega por WhatsApp con tu mensaje, tu firma y el código para reclamarlo."],
   reclamar: ["Así lo reclama", "Muestra el código en la barra, el barista lo valida y se lo entrega por su nombre, con la tarjeta impresa de tu mensaje."],
   puntos: ["Tus Puntos Colibrí", "Un punto por cada mil pesos; con cien, el tinto es tuyo. Y el día de tu cumpleaños, con tu compra, la galleta del colibrí va por nuestra cuenta."],
-  termo: ["Vale menos con tu termo", "Si traes tu termo o tu vaso, la bebida vale trescientos pesos menos, y una de cada diez veces te ganas un tinto."],
+  vaso: ["Trae tu propio vaso", "Si traes tu vaso o tu termo, la bebida vale trescientos pesos menos en cualquier tamaño, y una de cada diez veces te ganas un tinto."],
+  cumple: ["Feliz cumpleaños", "Como te registraste con tu correo del Poli, el día de tu cumpleaños la app te felicita y te invita a pasar por la galleta del colibrí, si es día hábil."],
+  bolsa: ["La bolsa del final del día", "Desde las ocho y media de la noche, la app te avisa: dos productos del día por tres mil pesos. La reservas, la pagas y la recoges con tu código antes del cierre."],
 };
-export function abrirTelefono(pantalla = "inicio", cerrarCb) {
-  alCerrar = cerrarCb || null;
+
+export function telefonoAbierto() { return !capa.classList.contains("oculto"); }
+export function telefonoGuiado() { return telefonoAbierto() && guiado; }
+export function abrirTelefono(pantalla = "inicio", { guiado: g = false, alCerrar: cb = null } = {}) {
+  cancelarGuion();
+  guiado = g;
+  alCerrar = cb;
+  capa.classList.toggle("guiado", guiado);
   capa.classList.remove("oculto");
+  if (!guiado) { estado.relojFijo = null; }
   actualizarHora();
-  if (pantalla === "demo") { demoRegalo(); return; }
-  ir(pantalla);
+  ir(pantalla === "termo" ? "vaso" : pantalla, { narrar: !guiado });
 }
-function qrMini(texto) {
-  let h = 0; for (const c of texto) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-  let celdas = "";
-  for (let y = 0; y < 13; y++) for (let x = 0; x < 13; x++) {
-    const enOjo = (x < 4 && y < 4) || (x > 8 && y < 4) || (x < 4 && y > 8);
-    h = (h * 1103515245 + 12345) >>> 0;
-    if (!enOjo && ((h >>> 16) & 1)) celdas += `<rect x="${x}" y="${y}" width="1" height="1"/>`;
-  }
-  const ojo = (x, y) => `<rect x="${x}" y="${y}" width="4" height="4"/><rect x="${x + 0.6}" y="${y + 0.6}" width="2.8" height="2.8" fill="#fff"/><rect x="${x + 1.2}" y="${y + 1.2}" width="1.6" height="1.6"/>`;
-  return `<svg class="tr-qr" viewBox="-1 -1 15 15"><rect x="-1" y="-1" width="15" height="15" fill="#fff"/><g fill="#0F385A">${celdas}${ojo(0, 0)}${ojo(9, 0)}${ojo(0, 9)}</g></svg>`;
+export function cerrarTelefono({ avisar = false } = {}) {
+  cancelarGuion();
+  ocultarAviso();
+  capa.classList.add("oculto");
+  capa.classList.remove("guiado");
+  guiado = false;
+  const cb = alCerrar; alCerrar = null;
+  if (avisar && cb) cb();
 }
-// historia animada: alguien le regala un café a Mary ❤ desde la app
-let demoActiva = 0;
-let demoInicio = 0;
-const pausa = (ms, id) => new Promise((ok, mal) => setTimeout(() => (id === demoActiva && telefonoAbierto() ? ok() : mal(new Error("cancelada"))), ms));
+btnCerrar.addEventListener("click", () => cerrarTelefono({ avisar: true }));
+capa.addEventListener("click", (e) => { if (e.target === capa && !guiado) cerrarTelefono({ avisar: true }); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && telefonoAbierto() && !guiado) cerrarTelefono({ avisar: true }); });
+
+function actualizarHora() {
+  const t = estado.relojFijo || new Date().toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit" });
+  document.getElementById("tel-hora").textContent = t;
+}
+
+// ------------------------------------------------------------------ guiones del recorrido guiado
+let guionGen = 0;
+export function cancelarGuion() { guionGen++; pant.querySelectorAll(".toque, .resalta").forEach((e) => e.classList.remove("toque", "resalta")); }
+const pausa = (ms, g) => new Promise((ok, mal) => setTimeout(() => (g === guionGen && telefonoAbierto() ? ok() : mal(new Error("cancelado"))), ms));
 function tocar(sel) {
-  const el = pant.querySelector(sel);
-  if (el) { el.classList.add("toque"); el.scrollIntoView({ block: "center", behavior: "smooth" }); }
+  const el = typeof sel === "string" ? pant.querySelector(sel) : sel;
+  if (!el) return null;
+  el.scrollIntoView({ block: "center", behavior: "smooth" });
+  el.classList.remove("toque"); void el.offsetWidth; el.classList.add("toque");
   return el;
 }
-async function escribir(sel, texto, id, vel = 38) {
+function resaltar(sel, si = true) {
+  const el = typeof sel === "string" ? pant.querySelector(sel) : sel;
+  if (el) { el.classList.toggle("resalta", si); if (si) el.scrollIntoView({ block: "center", behavior: "smooth" }); }
+  return el;
+}
+async function escribir(sel, texto, g, vel = 34) {
   const el = pant.querySelector(sel);
   if (!el) return;
   el.value = "";
-  el.focus({ preventScroll: true });
-  for (const c of texto) { el.value += c; el.dispatchEvent(new Event("input")); await pausa(vel, id); }
+  for (const c of texto) { el.value += c; el.dispatchEvent(new Event("input")); await pausa(vel, g); }
 }
-function enDemo() { return performance.now() - demoInicio < 30000 && demoInicio > 0; }
-async function demoRegalo() {
-  const id = ++demoActiva;
-  demoInicio = performance.now();
-  const r = estado.regalo;
-  const contar = (t, x) => narrador && narrador(t, x);
-  try {
-    r.para = "Alguien especial"; r.producto = "latte"; r.tarjeta = true; r.nombre = "Mary"; r.cel = "Mary ❤ · de tus contactos"; r.firma = "Andrés";
+async function desplazarA(sel, g) {
+  const el = pant.querySelector(sel);
+  if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
+  await pausa(650, g);
+}
+function mostrarAviso(html, alTocar) {
+  aviso.innerHTML = html;
+  aviso.classList.remove("oculto");
+  void aviso.offsetWidth;
+  aviso.classList.add("visible");
+  aviso.onclick = alTocar || null;
+}
+function ocultarAviso() { aviso.classList.remove("visible"); aviso.classList.add("oculto"); aviso.onclick = null; }
+
+const PRESETS = {
+  pedidoListo: () => { estado.carrito = { "capu@12": 1, pan: 1 }; estado.conVaso = true; estado.hora = "En el descanso (8:20 p. m.)"; estado.pago = "Nequi"; },
+};
+
+// Cada guion arranca desde un estado fijo: así Atrás y Siguiente siempre muestran lo mismo.
+const GUIONES = {
+  async inicio(g) {
+    estado = ESTADO0(); estado.relojFijo = "8:02 p. m."; actualizarHora();
     ir("inicio");
-    contar("Un regalo para Mary ❤", "Andrés quiere sorprender a Mary antes de su parcial. Abre la app de Café Poli y toca Regalar.");
-    await pausa(2600, id); tocar('[data-ir="regalo"]'); await pausa(700, id);
+    await pausa(5200, g);
+    for (const s of ['[data-ir="menu"]', '[data-ir="regalo"]', '[data-ir="puntos"]', '[data-ir="vaso"]']) {
+      resaltar(s); await pausa(1700, g); resaltar(s, false);
+    }
+    resaltar(".tarjeta-puntos");
+  },
+  async pedir(g) {
+    estado = ESTADO0(); estado.relojFijo = "8:03 p. m."; actualizarHora();
+    ir("inicio"); await pausa(900, g);
+    tocar('[data-ir="menu"]'); await pausa(500, g);
+    ir("menu"); await pausa(4200, g);
+    await desplazarA('[data-prod="capu"]', g); resaltar('[data-prod="capu"]'); await pausa(2600, g);
+    const chip = pant.querySelector('[data-add="capu"][data-oz="12"]') || pant.querySelector('[data-add="capu"]');
+    tocar(chip); await pausa(450, g); chip?.click(); await pausa(1500, g);
+    await desplazarA('[data-prod="pan"]', g); resaltar('[data-prod="pan"]'); await pausa(1800, g);
+    const mas = pant.querySelector('[data-add="pan"]'); tocar(mas); await pausa(450, g); mas?.click(); await pausa(900, g);
+    resaltar(".carrito-flotante .btn");
+  },
+  async pagar(g) {
+    estado = ESTADO0(); estado.relojFijo = "8:04 p. m."; actualizarHora();
+    PRESETS.pedidoListo(); estado.conVaso = false; estado.hora = "Ahora (10 min)"; estado.pago = "Tarjeta";
+    ir("pedido"); await pausa(3800, g);
+    tocar('[data-hora="En el descanso (8:20 p. m.)"]'); await pausa(400, g); pant.querySelector('[data-hora="En el descanso (8:20 p. m.)"]')?.click(); await pausa(2600, g);
+    const chk = pant.querySelector("#chk-vaso"); if (chk) { tocar(chk.closest(".interruptor")); await pausa(400, g); chk.click(); } await pausa(3000, g);
+    tocar('[data-pago="Nequi"]'); await pausa(400, g); pant.querySelector('[data-pago="Nequi"]')?.click(); await pausa(3200, g);
+    tocar("#btn-pagar"); await pausa(400, g); pant.querySelector("#btn-pagar")?.click();
+  },
+  async listo(g) {
+    estado = ESTADO0(); estado.relojFijo = "8:04 p. m."; actualizarHora();
+    estado.ultimoPedido = { codigo: "A47", hora: "En el descanso (8:20 p. m.)", puntos: 6, lineas: ["1 × Capuchino 12 oz", "1 × Pan de bono"] }; estado.puntos = 92;
+    ir("pagado"); await pausa(3500, g);
+    resaltar(".tarjeta-pedido"); await pausa(5000, g); resaltar(".tarjeta-pedido", false);
+    resaltar(".tarjeta-sumaste");
+  },
+  async regalo1(g) {
+    estado = ESTADO0(); estado.relojFijo = "9:12 p. m."; actualizarHora();
+    ir("inicio"); await pausa(3800, g);
+    resaltar('[data-ir="regalo"]'); await pausa(1800, g);
+    tocar('[data-ir="regalo"]'); await pausa(500, g);
+    estado.regalo.mensaje = "";
     ir("regalo");
-    contar("Escoge y escribe", "Elige un latte de arequipe con la tarjeta impresa y la chocolatina, busca a Mary en sus contactos y escribe su propio mensaje.");
-    await pausa(1500, id);
-    await escribir("#reg-msj", "Para que mañana arranques con todo. Esta pausa va por mí. ¿Nos vemos en Modo Conexión?", id);
-    await pausa(900, id);
-    tocar("#btn-regalar"); await pausa(600, id);
-    pant.querySelector("#btn-regalar")?.click();
-    contar("Paga en segundos", "Paga con Nequi y la app crea un código único que vale treinta días.");
-    await pausa(2200, id);
-    contar("La tarjeta personalizada", "Así queda la tarjeta: para Mary, con el mensaje y la firma de Andrés, el producto y el código para reclamarlo.");
-    await pausa(4200, id);
-    tocar("#btn-wa"); await pausa(600, id);
+  },
+  async regalo2(g) {
+    estado = ESTADO0(); estado.relojFijo = "9:13 p. m."; actualizarHora();
+    estado.regalo.mensaje = "";
+    ir("regalo"); await pausa(1800, g);
+    tocar('[data-para="Alguien especial"]'); await pausa(2600, g);
+    resaltar("#reg-prod"); await pausa(2600, g); resaltar("#reg-prod", false);
+    resaltar("#reg-tarjeta-fila"); await pausa(2400, g); resaltar("#reg-tarjeta-fila", false);
+    resaltar("#reg-cel"); await pausa(1800, g); resaltar("#reg-cel", false);
+    await desplazarA("#reg-msj", g);
+    await escribir("#reg-msj", "Para que mañana arranques con todo. Esta pausa va por mí. ¿Nos vemos en Modo Conexión?", g);
+    await pausa(500, g); resaltar("#reg-firma");
+  },
+  async regalo3(g) {
+    estado = ESTADO0(); estado.relojFijo = "9:14 p. m."; actualizarHora();
+    ir("regalo"); await pausa(1200, g);
+    await desplazarA("#btn-regalar", g);
+    tocar("#btn-regalar"); await pausa(400, g); pant.querySelector("#btn-regalar")?.click();
+    await pausa(2600, g);
+    resaltar(".tarjeta-regalo");
+  },
+  async regalo4(g) {
+    estado = ESTADO0(); estado.relojFijo = "9:15 p. m."; actualizarHora();
+    ir("regaloListo"); await pausa(1800, g);
+    tocar("#btn-wa"); await pausa(500, g);
     ir("whatsapp");
-    contar("Llega por WhatsApp", "Mary recibe la tarjeta y el código por WhatsApp. Mira cómo responde.");
-    await pausa(7000, id);
-    tocar("#btn-reclamar"); await pausa(600, id);
-    ir("reclamar");
-    contar("Y lo reclama en la barra", "Al día siguiente Mary muestra el código, el barista lo valida y le entrega su latte por su nombre, con la tarjeta impresa del mensaje.");
-  } catch (e) { /* demostración interrumpida */ }
-  demoInicio = 0;
+  },
+  async regalo5(g) {
+    estado = ESTADO0(); estado.relojFijo = "10:02 a. m."; actualizarHora();
+    ir("reclamar"); await pausa(2200, g);
+    for (const s of ["#paso-r1", "#paso-r2", "#paso-r3"]) { resaltar(s); await pausa(3600, g); resaltar(s, false); }
+  },
+  async puntos(g) {
+    estado = ESTADO0(); estado.relojFijo = "6:40 p. m."; actualizarHora(); estado.puntos = 104;
+    ir("puntos"); await pausa(4200, g);
+    resaltar(".puntos-grande"); await pausa(3600, g); resaltar(".puntos-grande", false);
+    tocar("#btn-canjear"); await pausa(400, g); pant.querySelector("#btn-canjear")?.click(); await pausa(3200, g);
+    resaltar(".tarjeta-cumple");
+  },
+  async cumple(g) {
+    estado = ESTADO0(); estado.relojFijo = "10:05 a. m."; actualizarHora();
+    ir("inicio"); await pausa(1800, g);
+    mostrarAviso(`<img src="assets/isotipo.svg" alt=""><div><b>Café Poli · ahora</b><span>🎂 ¡Feliz cumpleaños, ${estado.usuario}! Hoy la galleta del colibrí va por nuestra cuenta.</span></div>`, () => { ocultarAviso(); ir("cumple"); });
+    await pausa(4200, g);
+    tocar(aviso); await pausa(500, g);
+    ocultarAviso(); ir("cumple"); await pausa(5200, g);
+    resaltar(".cumple-reglas");
+  },
+  async vaso(g) {
+    estado = ESTADO0(); estado.relojFijo = "7:05 a. m."; actualizarHora();
+    ir("vaso"); await pausa(3000, g);
+    resaltar(".tabla-vaso"); await pausa(6500, g); resaltar(".tabla-vaso", false);
+    resaltar(".tarjeta-suerte"); await pausa(3800, g); resaltar(".tarjeta-suerte", false);
+    resaltar(".tarjeta-tienda");
+  },
+  async bolsa1(g) {
+    estado = ESTADO0(); estado.relojFijo = "8:30 p. m."; actualizarHora();
+    ir("inicio"); await pausa(2600, g);
+    mostrarAviso(`<img src="assets/isotipo.svg" alt=""><div><b>Café Poli · ahora</b><span>🛍️ Ya está la bolsa del final del día: 2 productos del día por $3.000. Quedan ${estado.bolsa.quedan}.</span></div>`, () => { ocultarAviso(); ir("bolsa"); });
+    await pausa(6200, g);
+    tocar(aviso); await pausa(500, g);
+    ocultarAviso(); ir("bolsa"); await pausa(1500, g);
+    resaltar(".bolsa-contenido");
+  },
+  async bolsa2(g) {
+    estado = ESTADO0(); estado.relojFijo = "8:31 p. m."; actualizarHora();
+    ir("bolsa"); await pausa(1500, g);
+    await desplazarA("#btn-bolsa", g);
+    tocar("#btn-bolsa"); await pausa(400, g); pant.querySelector("#btn-bolsa")?.click();
+    await pausa(2400, g);
+    resaltar(".codigo"); await pausa(4200, g); resaltar(".codigo", false);
+    resaltar(".tarjeta-dona");
+  },
+};
+export async function guionApp(nombre) {
+  cancelarGuion();
+  ocultarAviso();
+  const g = guionGen;
+  const f = GUIONES[nombre];
+  if (!f) { ir(nombre, { narrar: false }); return; }
+  try { await f(g); } catch (e) { /* guion interrumpido por Siguiente o Atrás */ }
 }
-export function telefonoAbierto() { return !capa.classList.contains("oculto"); }
-function cerrar() {
-  capa.classList.add("oculto");
-  if (alCerrar) alCerrar();
-}
-btnCerrar.addEventListener("click", cerrar);
-capa.addEventListener("click", (e) => { if (e.target === capa) cerrar(); });
-document.addEventListener("keydown", (e) => { if (e.key === "Escape" && telefonoAbierto()) cerrar(); });
 
-function actualizarHora() {
-  const d = new Date();
-  document.getElementById("tel-hora").textContent = d.toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit" });
-}
-
-function ir(nombre) {
+// ------------------------------------------------------------------ navegación de pantallas
+function ir(nombre, { narrar = !guiado } = {}) {
   const p = PANTALLAS[nombre] || PANTALLAS.inicio;
   pant.innerHTML = p();
   pant.scrollTop = 0;
-  pant.querySelectorAll("[data-ir]").forEach((b) => b.addEventListener("click", () => ir(b.dataset.ir)));
-  if (narrador && NARRA[nombre] && !enDemo()) narrador(NARRA[nombre][0], NARRA[nombre][1]);
-  const demo = pant.querySelector("#btn-demo");
-  if (demo) demo.addEventListener("click", () => demoRegalo());
+  pant.querySelectorAll("[data-ir]").forEach((b) => b.addEventListener("click", () => { if (!guiado) ir(b.dataset.ir); }));
+  if (narrar && narrador && NARRA[nombre]) narrador(NARRA[nombre][0], NARRA[nombre][1]);
   const enlazar = ENLACES[nombre];
   if (enlazar) enlazar();
 }
@@ -133,12 +266,13 @@ function ir(nombre) {
 const FOTO = {
   tinto: "☕", campesino: "☕", leche: "☕", capu: "☕", latte: "🥛", frio: "🧊",
   parcial: "⚡", espresso: "☕", cparcial: "⚡",
-  teNegro: "🫖", teVerde: "🍵", frutos: "🍒", chai: "🧋", cata: "🫖",
+  teNegro: "🫖", teVerde: "🍵", frutos: "🍒", chai: "🧋", cata: "🫖", milo: "🍫", miloFrio: "🧋",
   aroma: "🌿", panela: "🍋", choco: "🍫", avena: "🌾", jugo: "🍊",
   pan: "🥯", panyuca: "🥖", bunuelo: "🧆", almojabana: "🍞", arepa: "🫓", boyacense: "🌽", arepahuevo: "🥚", empanada: "🥟", sandwich: "🥪",
   tortica: "🧁", zanahoria: "🥕", cheesecake: "🍰", brownie: "🍪", galletas: "🍪", postre2: "💞", fruta: "🍓",
   pausa: "☕", desayuno: "🍳", tardecata: "🫖", vaso: "🥤", termo: "🧉",
 };
+const foto = (id) => FOTO[id] || (/^te|infus|tisana/i.test(id) ? "🍵" : "☕");
 const nav = (activo) => `
   <nav class="nav-app">
     ${[["inicio", "🏠", "Inicio"], ["menu", "☕", "Pedir"], ["regalo", "🎁", "Regalar"], ["puntos", "⭐", "Puntos"]].map(([id, ic, t]) => `<button data-ir="${id}" class="${id === activo ? "activo" : ""}"><span>${ic}</span>${t}</button>`).join("")}
@@ -153,37 +287,69 @@ const cab = (titulo, sub, volver = "inicio") => `
     ${sub ? `<small>${sub}</small>` : ""}
   </div>`;
 
+const claveItem = (id, oz) => (oz ? `${id}@${oz}` : id);
+const partirClave = (k) => { const [id, oz] = k.split("@"); return { id, oz: oz || null }; };
 const cantidadCarrito = () => Object.values(estado.carrito).reduce((a, b) => a + b, 0);
 function totalCarrito() {
   let total = 0, bebidas = 0;
-  for (const [id, n] of Object.entries(estado.carrito)) {
+  for (const [k, n] of Object.entries(estado.carrito)) {
+    const { id, oz } = partirClave(k);
     const p = porId(id);
-    total += p.precio * n;
+    total += precioDe(p, oz) * n;
     if (p.termo) bebidas += n;
   }
-  const desc = estado.conTermo ? Math.min(bebidas, 1) * DESCUENTO_TERMO : 0;
+  const desc = estado.conVaso ? Math.min(bebidas, 1) * DESCUENTO_TERMO : 0;
   return { subtotal: total, desc, total: total - desc, bebidas };
+}
+function lineaProducto(p) {
+  const t = tamanos(p);
+  const cant = (k) => (estado.carrito[k] ? `<b class="cant">${estado.carrito[k]}</b>` : "");
+  if (t) {
+    return `
+      <div class="producto" data-prod="${p.id}">
+        <div class="foto">${foto(p.id)}</div>
+        <div style="flex:1;min-width:0">
+          <div class="nombre">${p.nombre.replace(/ \(\d+\s?oz\)/, "")}</div>
+          ${p.nota ? `<div class="termo">${p.nota}</div>` : ""}
+          <div class="tamanos">${t.map((s) => `<button class="tam" data-add="${p.id}" data-oz="${s.oz}"><span>${s.oz} oz</span><b>${fmt(s.precio)}</b>${cant(claveItem(p.id, s.oz))}</button>`).join("")}</div>
+          ${p.termo ? `<div class="termo">Con tu vaso: −${fmt(DESCUENTO_TERMO)} en cualquier tamaño</div>` : ""}
+        </div>
+      </div>`;
+  }
+  return `
+    <div class="producto" data-prod="${p.id}">
+      <div class="foto">${foto(p.id)}</div>
+      <div style="flex:1;min-width:0">
+        <div class="nombre">${p.nombre}</div>
+        <div class="precio">${fmt(p.precio)}</div>
+        ${p.termo ? `<div class="termo">Con tu vaso: ${fmt(p.precio - DESCUENTO_TERMO)}</div>` : ""}
+        ${p.nota ? `<div class="termo">${p.nota}</div>` : ""}
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        ${cant(p.id)}
+        <button class="mas" data-add="${p.id}" aria-label="Agregar ${p.nombre}">+</button>
+      </div>
+    </div>`;
 }
 
 const PANTALLAS = {
   inicio: () => `
     <div class="app">
-      ${cab(`Hola, ${estado.usuario}`, "Sabor colombiano, experiencia del mundo", null)}
+      ${cab(`Hola, ${estado.usuario}`, "Somos origen. Somos país. Somos Poli.", null)}
       <div class="app-cuerpo">
-        <div class="tarjeta">
+        <div class="tarjeta tarjeta-puntos">
           <h4>⭐ ${estado.puntos} Puntos Colibrí</h4>
           <div class="puntos-barra"><span style="width:${Math.min(100, estado.puntos)}%"></span></div>
           <p>${estado.puntos >= 100 ? "¡Ya tienes un tinto gratis para canjear!" : `Te faltan ${100 - estado.puntos} puntos para tu próximo tinto.`}</p>
         </div>
         <div class="botones-inicio">
-          <button class="boton-grande bg-magenta" data-ir="menu"><span>☕</span>Pedir y recoger</button>
+          <button class="boton-grande bg-magenta" data-ir="menu"><span>☕</span>Pedir y recoger sin fila</button>
           <button class="boton-grande bg-navy" data-ir="regalo"><span>🎁</span>Regalar un Café Poli</button>
-          <button class="boton-grande bg-oro" data-ir="puntos"><span>⭐</span>Mis puntos</button>
-          <button class="boton-grande bg-cian" data-ir="termo"><span>♻️</span>Vale menos con tu termo</button>
+          <button class="boton-grande bg-oro" data-ir="puntos"><span>⭐</span>Mis Puntos Colibrí</button>
+          <button class="boton-grande bg-cian" data-ir="vaso"><span>♻️</span>Trae tu vaso: −${fmt(DESCUENTO_TERMO)}</button>
         </div>
-        <button class="btn btn-principal btn-demo" id="btn-demo">▶ Ver la historia: un regalo para Mary ❤</button>
         <div class="tarjeta"><h4>Semana de parciales</h4><p>Llegó el Café Parcial: doble carga de café de origen con panela y canela. Unos 125 mg de cafeína, uno por persona.</p></div>
-        <div class="tarjeta"><h4>🎂 ¿Cumples años?</h4><p>Si nos das permiso, sales en la pantalla de Modo Conexión y con tu compra te damos la galleta del colibrí.</p></div>
+        <div class="tarjeta"><h4>🛍️ Bolsa del final del día</h4><p>Desde las 8:30 p. m. te avisamos si hay bolsa: dos productos del día por ${fmt(3000)}.</p></div>
       </div>
       ${nav("inicio")}
     </div>`,
@@ -197,20 +363,7 @@ const PANTALLAS = {
       <div class="app-cuerpo">
         ${CARTA.map((c) => `
           <div class="categoria categoria-color" style="--cat:${c.color || "#0F385A"}">${c.cat}${c.lema ? `<small>${c.lema}</small>` : ""}</div>
-          ${c.items.map((p) => `
-            <div class="producto">
-              <div class="foto">${FOTO[p.id] || "☕"}</div>
-              <div style="flex:1">
-                <div class="nombre">${p.nombre}</div>
-                <div class="precio">${fmt(p.precio)}</div>
-                ${p.termo ? `<div class="termo">Con tu termo: ${fmt(p.precio - DESCUENTO_TERMO)}</div>` : ""}
-                ${p.nota ? `<div class="termo">${p.nota}</div>` : ""}
-              </div>
-              <div style="display:flex;align-items:center;gap:6px">
-                ${estado.carrito[p.id] ? `<span class="cant">${estado.carrito[p.id]}</span>` : ""}
-                <button class="mas" data-add="${p.id}" aria-label="Agregar ${p.nombre}">+</button>
-              </div>
-            </div>`).join("")}
+          ${c.items.map(lineaProducto).join("")}
           ${c.nota ? `<p class="nota-cat">${c.nota}</p>` : ""}`).join("")}
       </div>
       <div class="carrito-flotante">
@@ -221,9 +374,10 @@ const PANTALLAS = {
 
   pedido: () => {
     const t = totalCarrito();
-    const lineas = Object.entries(estado.carrito).map(([id, n]) => {
+    const lineas = Object.entries(estado.carrito).map(([k, n]) => {
+      const { id, oz } = partirClave(k);
       const p = porId(id);
-      return `<div class="linea"><span>${n} × ${p.nombre}</span><span>${fmt(p.precio * n)}</span></div>`;
+      return `<div class="linea"><span>${n} × ${nombreCorto(p)}${oz ? ` ${oz} oz` : ""}</span><span>${fmt(precioDe(p, oz) * n)}</span></div>`;
     }).join("");
     const opt = (grupo, valor, actual) => `<button class="opcion ${valor === actual ? "activa" : ""}" data-${grupo}="${valor}">${valor}</button>`;
     return `
@@ -231,16 +385,16 @@ const PANTALLAS = {
       ${cab("Tu pedido", "Revisa, elige la hora y paga", "menu")}
       <div class="app-cuerpo">
         <div class="tarjeta">${lineas || "<p>Tu pedido está vacío.</p>"}
-          ${t.desc ? `<div class="linea"><span>Descuento por tu termo</span><span>−${fmt(t.desc)}</span></div>` : ""}
+          ${t.desc ? `<div class="linea"><span>Descuento por traer tu vaso</span><span>−${fmt(t.desc)}</span></div>` : ""}
           <div class="linea total"><span>Total</span><span>${fmt(t.total)}</span></div>
         </div>
-        ${t.bebidas ? `<label class="interruptor"><span>♻️ Traigo mi termo (−${fmt(DESCUENTO_TERMO)})</span><input type="checkbox" id="chk-termo" ${estado.conTermo ? "checked" : ""}></label>` : ""}
         <div class="categoria">¿Cuándo lo recoges?</div>
-        <div class="opciones">${["Ahora (10 min)", "En el descanso (7:30 p. m.)", "Al salir (9:30 p. m.)"].map((v) => opt("hora", v, estado.hora)).join("")}</div>
+        <div class="opciones">${["Ahora (10 min)", "En el descanso (8:20 p. m.)", "Al salir (9:30 p. m.)"].map((v) => opt("hora", v, estado.hora)).join("")}</div>
+        ${t.bebidas ? `<label class="interruptor"><span>♻️ Traigo mi vaso (−${fmt(DESCUENTO_TERMO)})</span><input type="checkbox" id="chk-vaso" ${estado.conVaso ? "checked" : ""}></label>` : ""}
         <div class="categoria">¿Cómo pagas?</div>
         <div class="opciones">${["Nequi", "Daviplata", "Bre-B", "Tarjeta"].map((v) => opt("pago", v, estado.pago)).join("")}</div>
         <button class="btn btn-principal" id="btn-pagar" style="width:100%" ${t.total ? "" : "disabled"}>Pagar ${fmt(t.total)}</button>
-        <p style="font-size:.74rem;color:#5c6b7a;text-align:center;margin-top:8px">Simulación: no se cobra nada.</p>
+        <p class="nota-sim">Simulación: no se cobra nada.</p>
       </div>
     </div>`;
   },
@@ -252,8 +406,8 @@ const PANTALLAS = {
       ${cab("¡Pedido pagado!", "", null)}
       <div class="app-cuerpo exito">
         <div class="grande">✅</div>
-        <div class="tarjeta"><h4>Pedido ${p.codigo}</h4><p>Recógelo ${p.hora.toLowerCase()} en la barra. La pantalla te avisa y el barista te llama: “¡${estado.usuario}!”.</p></div>
-        <div class="tarjeta"><h4>+${p.puntos} Puntos Colibrí</h4><p>Ahora tienes ${estado.puntos} puntos. ${estado.puntos >= 100 ? "¡Ya puedes canjear un tinto!" : `Te faltan ${100 - estado.puntos} para un tinto.`}</p></div>
+        <div class="tarjeta tarjeta-pedido"><h4>Pedido ${p.codigo}</h4>${(p.lineas || []).map((l) => `<p>${l}</p>`).join("")}<p>Recógelo ${p.hora.toLowerCase()} en la barra. La pantalla de pedidos te avisa y el barista te llama: «¡${estado.usuario}!».</p></div>
+        <div class="tarjeta tarjeta-sumaste"><h4>+${p.puntos} Puntos Colibrí</h4><p>Ahora tienes ${estado.puntos} puntos. ${estado.puntos >= 100 ? "¡Ya puedes canjear un tinto!" : `Te faltan ${100 - estado.puntos} para un tinto.`}</p></div>
         <button class="btn btn-principal" data-ir="inicio" style="width:100%">Volver al inicio</button>
       </div>
     </div>`;
@@ -261,7 +415,7 @@ const PANTALLAS = {
 
   regalo: () => {
     const r = estado.regalo;
-    const opciones = ["capu", "latte", "cparcial", "desayuno", "pausa"].map((id) => porId(id));
+    const opciones = ["capu", "latte", "cparcial", "desayuno", "pausa"].map(porId);
     const prod = porId(r.producto);
     const total = prod.precio + (r.tarjeta ? DETALLE_REGALO.precio : 0);
     return `
@@ -271,23 +425,23 @@ const PANTALLAS = {
         <div class="categoria">¿Para quién es?</div>
         <div class="opciones">${["Alguien especial", "Un amigo", "Mi hijo o hija"].map((v) => `<button class="opcion ${v === r.para ? "activa" : ""}" data-para="${v}">${v}</button>`).join("")}</div>
         <label class="campo"><span>¿Qué le regalas?</span>
-          <select id="reg-prod">${opciones.map((p) => `<option value="${p.id}" ${p.id === r.producto ? "selected" : ""}>${p.nombre} · ${fmt(p.precio)}</option>`).join("")}</select>
+          <select id="reg-prod">${opciones.map((p) => `<option value="${p.id}" ${p.id === r.producto ? "selected" : ""}>${nombreCorto(p)} · ${fmt(p.precio)}</option>`).join("")}</select>
         </label>
-        <label class="interruptor"><span>💌 ${DETALLE_REGALO.nombre} (+${fmt(DETALLE_REGALO.precio)})</span><input type="checkbox" id="reg-tarjeta" ${r.tarjeta ? "checked" : ""}></label>
+        <label class="interruptor" id="reg-tarjeta-fila"><span>💌 ${DETALLE_REGALO.nombre} (+${fmt(DETALLE_REGALO.precio)})</span><input type="checkbox" id="reg-tarjeta" ${r.tarjeta ? "checked" : ""}></label>
         <label class="campo"><span>Nombre de quien recibe</span><input id="reg-nombre" value="${r.nombre}" maxlength="30"></label>
         <label class="campo"><span>Enviar por WhatsApp a</span><input id="reg-cel" value="${r.cel}" maxlength="40"></label>
         <label class="campo"><span>Tu mensaje (máximo 120 caracteres)</span><textarea id="reg-msj" maxlength="120">${r.mensaje}</textarea><div class="contador" id="reg-cont">${r.mensaje.length}/120</div></label>
         <label class="campo"><span>Firma</span><input id="reg-firma" value="${r.firma}" maxlength="24"></label>
         <div class="tarjeta"><div class="linea total" style="border:0;margin:0;padding:0"><span>Total</span><span id="reg-total">${fmt(total)}</span></div></div>
         <button class="btn btn-principal" id="btn-regalar" style="width:100%">Pagar y crear el código</button>
-        <p style="font-size:.74rem;color:#5c6b7a;text-align:center;margin-top:8px">Simulación: no se cobra ni se envía nada.</p>
+        <p class="nota-sim">Simulación: no se cobra ni se envía nada.</p>
       </div>
     </div>`;
   },
 
   regaloListo: () => {
     const r = estado.regalo;
-    const prod = porId(r.producto).nombre.split(":")[0].split(" (")[0];
+    const prod = nombreCorto(porId(r.producto));
     return `
     <div class="app">
       ${cab("¡Tu regalo está listo!", "Así lo verá " + r.nombre, "regalo")}
@@ -295,7 +449,7 @@ const PANTALLAS = {
         <div class="tarjeta-regalo">
           <div class="tr-cab"><img src="assets/logo-blanco.svg" alt="Café Poli" onerror="this.outerHTML='<b>Café Poli</b>'"><span>Regalo</span></div>
           <div class="tr-para">Para <b>${r.nombre}${r.para === "Alguien especial" ? " ❤" : ""}</b></div>
-          <div class="tr-prod">${FOTO[r.producto] || "☕"} ${prod}${r.tarjeta ? " + chocolatina" : ""}</div>
+          <div class="tr-prod">${foto(r.producto)} ${prod}${r.tarjeta ? " + chocolatina" : ""}</div>
           <p class="tr-msj">“${r.mensaje}”</p>
           <div class="tr-firma">— ${r.firma}</div>
           <div class="tr-pie"><div><small>Código</small><div class="tr-codigo">${estado.ultimoCodigo}</div><small>Vale 30 días · City Campus, piso 2</small></div>${qrMini(estado.ultimoCodigo)}</div>
@@ -307,16 +461,16 @@ const PANTALLAS = {
 
   whatsapp: () => {
     const r = estado.regalo;
-    const prod = porId(r.producto).nombre.split(":")[0].split(" (")[0];
+    const prod = nombreCorto(porId(r.producto));
     const contacto = r.nombre + (r.para === "Alguien especial" ? " ❤" : "");
-    const hora = new Date().toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit" });
+    const hora = estado.relojFijo || new Date().toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit" });
     return `
     <div class="wa">
       <div class="wa-cab"><button class="app-volver" data-ir="regaloListo">←</button><div class="ava">${r.para === "Alguien especial" ? "❤" : r.nombre.charAt(0)}</div><div><strong>${contacto}</strong><small id="wa-estado">en línea</small></div></div>
       <div class="wa-chat" id="wa-chat">
         <div class="wa-nota">Simulación del mensaje que llega por WhatsApp</div>
         <div class="wa-msg con-tarjeta">
-          <div class="wa-tarjeta"><b>🎁 Café Poli · Regalo</b><span>${FOTO[r.producto] || "☕"} ${prod}</span><em>Para ${contacto}</em></div>
+          <div class="wa-tarjeta"><b>🎁 Café Poli · Regalo</b><span>${foto(r.producto)} ${prod}</span><em>Para ${contacto}</em></div>
 ${r.firma} te regaló un ${prod} en Café Poli (City Campus, piso 2).
 “${r.mensaje}”
 Código: *${estado.ultimoCodigo}* · muéstralo en la barra. Vale 30 días.<time>${hora} ✓✓</time></div>
@@ -327,14 +481,14 @@ Código: *${estado.ultimoCodigo}* · muéstralo en la barra. Vale 30 días.<time
 
   reclamar: () => {
     const r = estado.regalo;
-    const prod = porId(r.producto).nombre.split(":")[0];
+    const prod = nombreCorto(porId(r.producto));
     return `
     <div class="app">
       ${cab("Así lo reclama", "En la barra, con una persona", "whatsapp")}
       <div class="app-cuerpo">
-        <div class="tarjeta"><h4>1. Muestra el código</h4><p>${r.nombre} llega a la barra y muestra <b>${estado.ultimoCodigo}</b> en su celular.</p></div>
-        <div class="tarjeta"><h4>2. El barista lo valida</h4><p>Lo lee en la caja; el sistema descuenta el ${prod} del inventario.</p></div>
-        <div class="tarjeta"><h4>3. Se lo entregan por su nombre</h4><p>“¡${r.nombre}, esto te lo mandó ${r.firma}!”${r.tarjeta ? " Con la tarjeta impresa de tu mensaje." : ""}</p></div>
+        <div class="tarjeta" id="paso-r1"><h4>1. Muestra el código</h4><p>${r.nombre} llega a la barra y muestra <b>${estado.ultimoCodigo}</b> en su celular.</p></div>
+        <div class="tarjeta" id="paso-r2"><h4>2. El barista lo valida</h4><p>Lo lee en la caja; el sistema descuenta el ${prod} del inventario.</p></div>
+        <div class="tarjeta" id="paso-r3"><h4>3. Se lo entregan por su nombre</h4><p>«¡${r.nombre}, esto te lo mandó ${r.firma}!»${r.tarjeta ? " Con la tarjeta impresa del mensaje." : ""}</p></div>
         <button class="btn btn-principal" data-ir="inicio" style="width:100%">Volver al inicio</button>
       </div>
     </div>`;
@@ -344,8 +498,8 @@ Código: *${estado.ultimoCodigo}* · muéstralo en la barra. Vale 30 días.<time
     <div class="app">
       ${cab("Club Colibrí", "Te inscribes con tu correo del Poli")}
       <div class="app-cuerpo">
-        <div class="tarjeta" style="text-align:center">
-          <div style="font-family:var(--f-titulo);font-size:2.6rem;color:var(--navy);line-height:1">${estado.puntos}</div>
+        <div class="tarjeta puntos-grande" style="text-align:center">
+          <div class="num-puntos">${estado.puntos}</div>
           <p>Puntos Colibrí</p>
           <div class="puntos-barra"><span style="width:${Math.min(100, estado.puntos)}%"></span></div>
           <p>1 punto por cada $1.000 · 100 puntos = 1 tinto</p>
@@ -354,55 +508,88 @@ Código: *${estado.ultimoCodigo}* · muéstralo en la barra. Vale 30 días.<time
         <div id="canje"></div>
         <div class="categoria">Tus últimas compras</div>
         ${estado.historial.slice(-5).reverse().map(([n, p]) => `<div class="linea"><span>${n}</span><span>${p > 0 ? "+" : ""}${p}</span></div>`).join("")}
-        <div class="tarjeta" style="margin-top:12px"><h4>🎂 Tu cumpleaños</h4><p>Con tu permiso sales en la pantalla, y con tu compra de ese día te damos la galleta del colibrí.</p></div>
+        <div class="tarjeta tarjeta-cumple" style="margin-top:12px"><h4>🎂 Tu cumpleaños</h4><p>Con tu permiso sales en la pantalla, y con tu compra de ese día te damos la galleta del colibrí.</p></div>
       </div>
     </div>`,
 
-  termo: () => {
-    const ejemplos = ["tinto", "leche", "capu", "latte", "parcial", "aroma"].map(porId);
+  vaso: () => {
+    const ej = ["tinto", "capu", "latte", "chai", "milo"].map(porId).filter((p) => p.precio);
+    const tams = (p) => tamanos(p) || [{ oz: (p.nombre.match(/(\d+)\s?oz/) || [])[1] || "", precio: p.precio }];
     return `
     <div class="app">
-      ${cab("Vale menos con tu termo", "Menos vasos desechables")}
+      ${cab("Trae tu propio vaso", "Tu vaso o tu termo, del tamaño que quieras")}
       <div class="app-cuerpo">
-        <div class="tarjeta">
-          ${ejemplos.map((p) => `<div class="linea"><span>${p.nombre.split(":")[0]}</span><span><s style="color:#9aa">${fmt(p.precio)}</s> <b style="color:var(--magenta)">${fmt(p.precio - DESCUENTO_TERMO)}</b></span></div>`).join("")}
+        <div class="tarjeta tabla-vaso">
+          <h4>Pagas por onzas y ${fmt(DESCUENTO_TERMO)} menos</h4>
+          ${ej.map((p) => `<div class="fila-vaso"><span>${nombreCorto(p)}</span><span class="tams-vaso">${tams(p).map((s) => `<i>${s.oz ? s.oz + " oz " : ""}<s>${fmt(s.precio)}</s> <b>${fmt(s.precio - DESCUENTO_TERMO)}</b></i>`).join("")}</span></div>`).join("")}
         </div>
-        <div class="tarjeta"><h4>🍀 1 de cada 10</h4><p>Cada vez que traes tu termo participas: una de cada diez veces te ganas un tinto.</p></div>
-        <div class="tarjeta"><h4>Termo Café Poli · ${fmt(28000)}</h4><p>Acero, 350 ml. También hay vaso reutilizable a ${fmt(12000)}.</p></div>
-        <button class="btn btn-principal" data-ir="menu" style="width:100%">Pedir con mi termo</button>
+        <div class="tarjeta tarjeta-suerte"><h4>🍀 1 de cada 10</h4><p>Cada vez que traes tu vaso participas: una de cada diez veces te ganas un tinto.</p></div>
+        <div class="tarjeta tarjeta-tienda"><h4>¿No tienes vaso?</h4><p>En la Tienda Poli está el vaso reutilizable Café Poli en 8, 12 y 16 onzas, y el termo de acero. Se paga solo con el ahorro.</p></div>
+        <button class="btn btn-principal" data-ir="menu" style="width:100%">Pedir con mi vaso</button>
       </div>
     </div>`;
   },
+
+  cumple: () => `
+    <div class="app">
+      ${cab("¡Feliz cumpleaños!", "Hoy es tu día, " + estado.usuario)}
+      <div class="app-cuerpo exito">
+        <img src="assets/poligreca-celebra.svg" alt="Poligreca celebra" class="cumple-img">
+        <div class="tarjeta"><h4>🎂 La galleta del colibrí va por nuestra cuenta</h4><p>Con tu compra de hoy, pásate por la barra y te la entregamos por tu nombre. Y si nos diste permiso, hoy sales en Poli TV.</p></div>
+        <div class="tarjeta cumple-reglas"><h4>¿Cómo sabemos?</h4><p>Te registraste con tu correo del Poli y tu fecha de cumpleaños. Te felicitamos en días hábiles, de lunes a sábado; si cae domingo o festivo, ese día no abrimos.</p></div>
+        <button class="btn btn-principal" data-ir="menu" style="width:100%">Pedir y reclamar mi galleta</button>
+      </div>
+    </div>`,
+
+  bolsa: () => `
+    <div class="app">
+      ${cab("Bolsa del final del día", "Hoy, desde las 8:30 p. m.")}
+      <div class="app-cuerpo">
+        <div class="tarjeta bolsa-contenido">
+          <h4>🛍️ 2 productos del día · ${fmt(3000)}</h4>
+          <p>Lo que quedó hoy en la vitrina, recién horneado en la mañana: por ejemplo, un pan de bono y una porción de torta. En la carta valen más de ${fmt(6000)}.</p>
+          <div class="bolsa-quedan"><b>${estado.bolsa.quedan}</b> bolsas disponibles hoy</div>
+        </div>
+        <div class="tarjeta"><h4>¿Cómo funciona?</h4><p>1. A las 8:30 p. m. la caja sabe qué sobró y la app avisa al Club Colibrí.<br>2. La reservas y la pagas aquí.<br>3. La recoges en la barra con tu código antes de las 9:30 p. m.</p></div>
+        <button class="btn btn-principal" id="btn-bolsa" style="width:100%">Reservar y pagar ${fmt(3000)}</button>
+        <div id="bolsa-ok"></div>
+        <div class="tarjeta tarjeta-dona" style="margin-top:10px"><h4>💛 Lo que no se vende se dona</h4><p>Lo que nadie reserva antes del cierre se dona esa misma noche. Menos comida a la basura.</p></div>
+        <p class="nota-sim">Simulación: no se cobra nada.</p>
+      </div>
+    </div>`,
 };
 
 const ENLACES = {
   menu: () => {
     pant.querySelectorAll("[data-add]").forEach((b) => b.addEventListener("click", () => {
-      const id = b.dataset.add;
-      estado.carrito[id] = (estado.carrito[id] || 0) + 1;
+      const k = claveItem(b.dataset.add, b.dataset.oz);
+      estado.carrito[k] = (estado.carrito[k] || 0) + 1;
       const top = pant.scrollTop;
-      ir("menu");
+      ir("menu", { narrar: false });
       pant.scrollTop = top;
+      pant.querySelector(`[data-prod="${b.dataset.add}"]`)?.classList.add("resalta");
     }));
   },
   pedido: () => {
-    const chk = document.getElementById("chk-termo");
-    if (chk) chk.addEventListener("change", () => { estado.conTermo = chk.checked; ir("pedido"); });
-    pant.querySelectorAll("[data-hora]").forEach((b) => b.addEventListener("click", () => { estado.hora = b.dataset.hora; ir("pedido"); }));
-    pant.querySelectorAll("[data-pago]").forEach((b) => b.addEventListener("click", () => { estado.pago = b.dataset.pago; ir("pedido"); }));
+    const chk = document.getElementById("chk-vaso");
+    if (chk) chk.addEventListener("change", () => { estado.conVaso = chk.checked; refrescar("pedido"); });
+    pant.querySelectorAll("[data-hora]").forEach((b) => b.addEventListener("click", () => { estado.hora = b.dataset.hora; refrescar("pedido"); }));
+    pant.querySelectorAll("[data-pago]").forEach((b) => b.addEventListener("click", () => { estado.pago = b.dataset.pago; refrescar("pedido"); }));
     const pagar = document.getElementById("btn-pagar");
     if (pagar) pagar.addEventListener("click", () => {
       pagar.disabled = true;
       pagar.innerHTML = `<span class="cargando"></span> Pagando con ${estado.pago}…`;
       setTimeout(() => {
+        if (!telefonoAbierto()) return;
         const t = totalCarrito();
         const puntos = Math.floor(t.total / 1000);
         estado.puntos += puntos;
-        estado.historial.push([Object.keys(estado.carrito).map((id) => porId(id).nombre.split(":")[0].split(" (")[0]).join(", "), puntos]);
-        estado.ultimoPedido = { codigo: "A" + Math.floor(20 + Math.random() * 70), hora: estado.hora, puntos };
+        const lineas = Object.entries(estado.carrito).map(([k, n]) => { const { id, oz } = partirClave(k); return `${n} × ${nombreCorto(porId(id))}${oz ? ` ${oz} oz` : ""}`; });
+        estado.historial.push([lineas.map((l) => l.replace(/^\d+ × /, "")).join(", "), puntos]);
+        estado.ultimoPedido = { codigo: "A" + (40 + Object.keys(estado.carrito).length * 7), hora: estado.hora, puntos, lineas };
         estado.carrito = {};
-        estado.conTermo = false;
-        ir("pagado");
+        estado.conVaso = false;
+        ir("pagado", { narrar: !guiado });
       }, 1300);
     });
   },
@@ -413,8 +600,8 @@ const ENLACES = {
       r.para = b.dataset.para;
       if (r.para === "Mi hijo o hija") { r.producto = "desayuno"; r.nombre = "Sofía"; r.cel = "Sofía 🌻 · de tus contactos"; r.mensaje = "Para que desayunes rico antes de clase. Te queremos."; r.firma = "Mamá y papá"; }
       else if (r.para === "Un amigo") { r.producto = "pausa"; r.nombre = "Camilo"; r.cel = "Camilo · de tus contactos"; r.mensaje = "Gracias por pasarme los apuntes. Te debo una."; r.firma = "Andrés"; }
-      else { r.producto = "latte"; r.nombre = "Mary"; r.cel = "Mary ❤ · de tus contactos"; r.mensaje = "Para que mañana arranques con todo. Esta pausa va por mí. ¿Nos vemos en Modo Conexión?"; r.firma = "Andrés"; }
-      ir("regalo");
+      else { const m = r.mensaje; Object.assign(r, ESTADO0().regalo); r.mensaje = guiado ? m : r.mensaje; }
+      refrescar("regalo");
     }));
     const sel = document.getElementById("reg-prod");
     sel.addEventListener("change", () => { r.producto = sel.value; document.getElementById("reg-total").textContent = total(); });
@@ -430,12 +617,11 @@ const ENLACES = {
       btn.disabled = true;
       btn.innerHTML = `<span class="cargando"></span> Pagando…`;
       setTimeout(() => {
-        const L = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        estado.ultimoCodigo = "CP-" + Array.from({ length: 4 }, () => L[Math.floor(Math.random() * L.length)]).join("");
+        if (!telefonoAbierto()) return;
         const pts = Math.floor((porId(r.producto).precio + (r.tarjeta ? DETALLE_REGALO.precio : 0)) / 1000);
         estado.puntos += pts;
         estado.historial.push([`Regalo para ${r.nombre}`, pts]);
-        ir("regaloListo");
+        ir("regaloListo", { narrar: !guiado });
       }, 1300);
     });
   },
@@ -443,22 +629,23 @@ const ENLACES = {
     const r = estado.regalo;
     const chat = document.getElementById("wa-chat");
     const est = document.getElementById("wa-estado");
-    const hora = () => new Date().toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit" });
+    const hora = estado.relojFijo || new Date().toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit" });
     const respuestas = r.para === "Alguien especial"
       ? [["recibido", "¡Ayyy, qué lindo! 😍 Me encantó el mensaje."], ["recibido", "Mañana lo reclamo en el descanso. ¿Me acompañas?"], ["enviado", "¡Claro! Nos vemos en Modo Conexión ☕"], ["recibido", "¡De una! 💛"]]
       : [["recibido", "¡Gracias! 🙌 Mañana lo reclamo."]];
-    let t = 900;
+    const g = guionGen;
+    let t = 1600;
     respuestas.forEach(([tipo, texto]) => {
-      if (tipo === "recibido") setTimeout(() => { if (est) est.textContent = "escribiendo…"; if (chat && chat.isConnected) chat.insertAdjacentHTML("beforeend", '<div class="wa-msg recibido escribiendo" id="wa-esc"><i></i><i></i><i></i></div>'); }, t);
-      t += tipo === "recibido" ? 1500 : 900;
+      if (tipo === "recibido") setTimeout(() => { if (g !== guionGen || !chat.isConnected) return; if (est) est.textContent = "escribiendo…"; chat.insertAdjacentHTML("beforeend", '<div class="wa-msg recibido escribiendo" id="wa-esc"><i></i><i></i><i></i></div>'); chat.parentElement.scrollTop = chat.parentElement.scrollHeight; }, t);
+      t += tipo === "recibido" ? 1700 : 1100;
       setTimeout(() => {
-        if (!chat || !chat.isConnected) return;
+        if (g !== guionGen || !chat.isConnected) return;
         document.getElementById("wa-esc")?.remove();
         if (est) est.textContent = "en línea";
-        chat.insertAdjacentHTML("beforeend", `<div class="wa-msg ${tipo === "recibido" ? "recibido" : ""}">${texto}<time>${hora()}${tipo === "enviado" ? " ✓✓" : ""}</time></div>`);
+        chat.insertAdjacentHTML("beforeend", `<div class="wa-msg ${tipo === "recibido" ? "recibido" : ""}">${texto}<time>${hora}${tipo === "enviado" ? " ✓✓" : ""}</time></div>`);
         chat.parentElement.scrollTop = chat.parentElement.scrollHeight;
       }, t);
-      t += 500;
+      t += 700;
     });
   },
   puntos: () => {
@@ -466,9 +653,36 @@ const ENLACES = {
     if (b && estado.puntos >= 100) b.addEventListener("click", () => {
       estado.puntos -= 100;
       estado.historial.push(["Canje: tinto gratis", -100]);
-      document.getElementById("canje").innerHTML = `<div class="tarjeta exito"><h4>¡Tinto canjeado!</h4><p>Muestra este código en la barra:</p><div class="codigo">TINTO-${Math.floor(100 + Math.random() * 900)}</div></div>`;
+      document.getElementById("canje").innerHTML = `<div class="tarjeta exito"><h4>¡Tinto canjeado!</h4><p>Muestra este código en la barra:</p><div class="codigo">TINTO-482</div></div>`;
       b.disabled = true;
       b.textContent = `Te quedan ${estado.puntos} puntos`;
     });
   },
+  bolsa: () => {
+    const b = document.getElementById("btn-bolsa");
+    b?.addEventListener("click", () => {
+      b.disabled = true;
+      b.innerHTML = `<span class="cargando"></span> Pagando con Nequi…`;
+      setTimeout(() => {
+        if (!telefonoAbierto()) return;
+        estado.bolsa.quedan = Math.max(0, estado.bolsa.quedan - 1);
+        b.textContent = "Bolsa reservada ✓";
+        document.getElementById("bolsa-ok").innerHTML = `<div class="tarjeta exito"><h4>¡Es tuya!</h4><p>Recógela en la barra antes de las 9:30 p. m. con este código:</p><div class="codigo">${estado.bolsa.codigo}</div></div>`;
+        const q = pant.querySelector(".bolsa-quedan b"); if (q) q.textContent = estado.bolsa.quedan;
+      }, 1200);
+    });
+  },
 };
+function refrescar(nombre) { const top = pant.scrollTop; ir(nombre, { narrar: false }); pant.scrollTop = top; }
+
+function qrMini(texto) {
+  let h = 0; for (const c of texto) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  let celdas = "";
+  for (let y = 0; y < 13; y++) for (let x = 0; x < 13; x++) {
+    const enOjo = (x < 4 && y < 4) || (x > 8 && y < 4) || (x < 4 && y > 8);
+    h = (h * 1103515245 + 12345) >>> 0;
+    if (!enOjo && ((h >>> 16) & 1)) celdas += `<rect x="${x}" y="${y}" width="1" height="1"/>`;
+  }
+  const ojo = (x, y) => `<rect x="${x}" y="${y}" width="4" height="4"/><rect x="${x + 0.6}" y="${y + 0.6}" width="2.8" height="2.8" fill="#fff"/><rect x="${x + 1.2}" y="${y + 1.2}" width="1.6" height="1.6"/>`;
+  return `<svg class="tr-qr" viewBox="-1 -1 15 15"><rect x="-1" y="-1" width="15" height="15" fill="#fff"/><g fill="#0F385A">${celdas}${ojo(0, 0)}${ojo(9, 0)}${ojo(0, 9)}</g></svg>`;
+}

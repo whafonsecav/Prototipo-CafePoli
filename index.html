@@ -12,6 +12,8 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Nunito+Sans:wght@400;600;700;800&display=swap">
   <link rel="stylesheet" href="css/estilos.css">
   <link rel="stylesheet" href="css/tour.css">
+  <link rel="stylesheet" href="css/carta.css">
+  <link rel="stylesheet" href="css/recorrido2.css">
   <script type="importmap">
   { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
   </script>
@@ -19,7 +21,7 @@
 <body>
   <canvas id="escena" aria-label="Vista 360° de Café Poli"></canvas>
   <div id="capa-puntos" aria-label="Puntos interactivos"></div>
-  <div id="aerea"><img src="panos/aerea.jpg" alt="Vista aérea de Café Poli en City Campus" loading="lazy"></div>
+  <div id="velo" aria-hidden="true"></div>
   <div id="cargando" class="oculto"><span class="cargando-giro"></span></div>
 
   <div id="carga" class="capa">
@@ -47,6 +49,7 @@
       <button id="btn-voz" class="icono" title="Voz" aria-label="Activar o silenciar la voz">🔊</button>
       <button id="btn-mapa" class="icono" title="Plano" aria-label="Ver el plano">🗺️</button>
       <button id="btn-app" class="icono" title="App Café Poli" aria-label="Abrir la app">📱</button>
+      <button id="btn-maqueta" class="icono" title="Maqueta 3D" aria-label="Ver la maqueta 3D">🧩</button>
       <button id="btn-pantalla" class="icono" title="Pantalla completa" aria-label="Pantalla completa">⛶</button>
     </div>
   </header>
@@ -54,13 +57,14 @@
   <section id="guia" class="oculto" aria-live="polite">
     <div class="coli-avatar"><img id="avatar-img" src="assets/poligreca_a.png" alt="Poligreca, la prima cafetera de Polito, guía del recorrido"></div>
     <div class="burbuja">
-      <div class="burbuja-cab"><span id="paso-num">Paso 1</span><button id="btn-repetir" class="enlace" aria-label="Repetir la voz">↻ Repetir</button></div>
+      <div class="burbuja-cab"><button id="btn-capitulos" class="capitulos" aria-label="Capítulos del recorrido">Bienvenida ▾</button><span id="paso-num">Paso 1</span><button id="btn-repetir" class="enlace" aria-label="Repetir la voz">↻ Repetir</button></div>
+      <div id="lista-capitulos" class="oculto" role="menu"></div>
+      <div class="progreso"><span id="progreso-barra"></span></div>
       <h2 id="paso-titulo">¡Hola!</h2>
       <p id="paso-texto"></p>
       <div id="paso-accion"></div>
       <div class="navegacion">
         <button id="btn-atras" class="btn btn-sec">← Atrás</button>
-        <div id="puntos-paso" class="puntos-paso"></div>
         <button id="btn-siguiente" class="btn btn-principal">Siguiente →</button>
       </div>
     </div>
@@ -72,10 +76,33 @@
     <p class="mapa-nota">Toca un punto para ir allí. La parte rosada muestra hacia dónde miras.</p>
   </div>
 
-  <div id="tv" class="capa oculto" role="dialog" aria-label="Pantalla de cumpleaños">
-    <div class="tv-marco"><img src="assets/tv_cumple.png" alt="Pantalla de cumpleaños de Café Poli"></div>
-    <button id="tv-cerrar" class="btn btn-sec">← Volver al recorrido</button>
+  <!-- Escenario: lo que se abre sobre la vista sin tapar la guía -->
+  <div id="tvx" class="escenario oculto" aria-label="Televisor">
+    <div id="tvx-marco" class="tvx-marco"><div id="tvx-pantalla" class="tvx-pantalla"></div><span class="tvx-vivo">● EN VIVO</span></div>
+    <p id="tvx-titulo" class="tvx-titulo"></p>
   </div>
+  <div id="producto" class="escenario oculto" aria-label="Producto de la Tienda Poli"></div>
+  <div id="logo-escena" class="escenario oculto" aria-label="La marca Café Poli">
+    <div class="lg-tv"><div class="lg-cuerpo"></div><span class="lg-sello">Poli TV · especial</span></div>
+  </div>
+  <div id="maqueta" class="escenario oculto" aria-label="Maqueta 3D de Café Poli">
+    <div id="maq-area" class="maq-area"><img id="maq-img" alt="Maqueta de Café Poli: arrástrala para girarla" draggable="false"></div>
+    <p id="maq-aviso" class="maq-aviso">↔ Arrastra para girar · ↕ arriba o de lado · pellizca o usa la rueda para acercar</p>
+    <div class="maq-botones"><button id="maq-lado" class="chip">De lado</button><button id="maq-arriba" class="chip">Desde arriba</button><button id="maq-girar" class="chip">⟳ Girar solo</button></div>
+  </div>
+  <div id="qrapp" class="escenario oculto" aria-label="Prueba la app de Café Poli">
+    <div class="qa-caja">
+      <img src="assets/qr-app.png" alt="Código QR para abrir la app de Café Poli" class="qa-qr" width="296" height="296">
+      <div class="qa-info">
+        <p class="prod-ceja">La app de Café Poli</p>
+        <h3>Escanéala y juega</h3>
+        <ul><li>Mira la carta y lo que queda hoy</li><li>Pide, paga (simulado) y pasa por tu pedido</li><li>Regala un café y compártelo con tu mensaje</li></ul>
+        <a class="btn btn-principal" href="app/" target="_blank" rel="noopener">Abrir la app</a>
+        <p class="qa-url">whafonsecav.github.io/Prototipo-CafePoli/app</p>
+      </div>
+    </div>
+  </div>
+  <button id="escena-cerrar" class="icono escena-cerrar" aria-label="Cerrar">✕</button>
 
   <div id="ficha" class="capa oculto" role="dialog" aria-label="Ficha de logro">
     <article class="ficha-caja">
@@ -99,33 +126,7 @@
     </div>
   </div>
 
-  <div id="carta" class="capa oculto" role="dialog" aria-modal="true" aria-labelledby="carta-titulo">
-    <article class="carta-caja">
-      <header class="carta-cab">
-        <img src="assets/pantallas/isotipo-blanco.svg" alt="" class="carta-iso" width="44" height="44">
-        <div class="carta-titulos">
-          <p class="carta-ceja">Café Poli · City Campus</p>
-          <h3 id="carta-titulo">La carta</h3>
-          <p class="carta-sub">Precios de estudiante con impuestos incluidos</p>
-        </div>
-        <button id="carta-cerrar" class="icono" aria-label="Cerrar la carta">✕</button>
-      </header>
-      <div class="carta-barra">
-        <div class="carta-tabs" role="tablist" aria-label="Secciones de la carta">
-          <button class="carta-tab activo" data-tab="bebidas" role="tab" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h13v4a6 6 0 0 1-6 6h-1a6 6 0 0 1-6-6zM17 11h1.5a2.5 2.5 0 0 1 0 5H16M8 3c-1 1.5 1 2.5 0 4M12 3c-1 1.5 1 2.5 0 4"/></svg>Bebidas</button>
-          <button class="carta-tab" data-tab="comidas" role="tab" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13c0-4 3.6-7 8-7s8 3 8 7v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zM9 9.5l-1 3M13 9l-.5 3.5M16.5 10l.5 2.5"/></svg>Comidas</button>
-        </div>
-        <span class="carta-termo"><b>−$300</b> con tu termo</span>
-      </div>
-      <div class="carta-cuerpo">
-        <div id="carta-grid" class="carta-grid"></div>
-        <div class="carta-pie">
-          <div class="carta-qr"><span id="carta-qr"></span><span><b>Escanea el QR y pide desde tu mesa</b>Paga en la app y recoge en la barra</span></div>
-          <p class="carta-estratos">Pensado para estratos 1, 2 y 3: un tinto vale $2.000 (3 % del salario mínimo diario), en cadenas entre $4.800 y $7.000.</p>
-        </div>
-      </div>
-    </article>
-  </div>
+  <div id="carta" class="capa oculto" role="dialog" aria-modal="true" aria-label="La carta de Café Poli"></div>
 
   <div id="reanudar" class="capa oculto" role="dialog">
     <div class="carga-caja">
@@ -142,6 +143,7 @@
   <div id="telefono-capa" class="capa oculto" role="dialog" aria-label="Simulación de la app Café Poli">
     <div class="telefono">
       <div class="telefono-notch"></div>
+      <div id="tel-aviso" class="tel-aviso oculto" role="status"></div>
       <div class="telefono-estado"><span id="tel-hora">7:24</span><span>📶 🔋</span></div>
       <div id="telefono-pantalla" class="telefono-pantalla"></div>
       <div class="telefono-home"></div>

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Café Poli · App</title>
+  <meta name="description" content="Prototipo funcional de la app de Café Poli: carta con disponibilidad, pide y pasa sin fila, regala un Café Poli con tu mensaje, Club Colibrí, trae tu vaso y la bolsa del final del día. Somos origen. Somos país. Somos Poli.">
+  <meta name="author" content="William Fonseca">
+  <meta name="theme-color" content="#0F385A">
+  <link rel="icon" href="img/isotipo.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="img/icono-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Nunito+Sans:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap">
+  <link rel="stylesheet" href="app.css">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" defer></script>
+</head>
+<body>
+  <div id="marco" class="marco">
+    <header class="cab">
+      <button class="cab-marca" data-ir="inicio" aria-label="Ir al inicio"><img src="img/logo-blanco.svg" alt="Café Poli" width="132" height="34"></button>
+      <div class="cab-der">
+        <span id="estado-local" class="estado-local"></span>
+        <button id="btn-perfil" class="cab-perfil" data-ir="perfil" aria-label="Mi perfil">👤</button>
+      </div>
+    </header>
+    <div id="aviso-demo" class="aviso-demo oculto"></div>
+    <main id="vista" class="vista" tabindex="-1"></main>
+    <nav class="tabs" aria-label="Secciones">
+      <button data-ir="inicio" class="tab"><span class="ti">🏠</span>Inicio</button>
+      <button data-ir="carta" class="tab"><span class="ti">☕</span>Carta</button>
+      <button data-ir="pedir" class="tab"><span class="ti">🛍️<b id="badge-carrito" class="badge oculto">0</b></span>Pedir</button>
+      <button data-ir="regalar" class="tab"><span class="ti">🎁</span>Regalar</button>
+      <button data-ir="puntos" class="tab"><span class="ti">⭐</span>Puntos</button>
+    </nav>
+  </div>
+  <div id="hoja" class="hoja oculto" role="dialog" aria-modal="true"><div class="hoja-caja" id="hoja-caja"></div></div>
+  <div id="toast" class="toast oculto" role="status"></div>
+  <canvas id="confeti" class="confeti" aria-hidden="true"></canvas>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

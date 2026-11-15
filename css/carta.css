@@ -1,0 +1,121 @@
+/* Café Poli · la carta en pantalla (js/carta.js). Azul Poli dominante; el color de cada mundo, solo de acento. */
+.cp-capa, #carta.cp-capa {
+  --cp-navy: #0F385A; --cp-navy2: #174B76; --cp-navy3: #0A2A45; --cp-cian: #15BECE; --cp-magenta: #E0006E; --cp-oro: #FBAF17; --cp-verde: #A6CE38;
+  --cp-crema: #FFF4E3; --cp-papel: #FBF6EE; --cp-texto: #1d2b3a; --cp-suave: #5d6b7a;
+  position: fixed; inset: 0; z-index: 50; display: grid; place-items: start center;
+  padding: 12px 12px calc(var(--guia-alto, 0px) + 12px);
+  background: rgba(6, 20, 34, .62); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+  font-family: "Nunito Sans", system-ui, sans-serif; color: var(--cp-texto);
+}
+.cp-capa.oculto, #carta.cp-capa.oculto { display: none; }
+.cp-carta {
+  width: min(1060px, 100%); margin-top: max(0px, min(5vh, 40px));
+  max-height: calc(100vh - var(--guia-alto, 0px) - 24px); max-height: calc(100dvh - var(--guia-alto, 0px) - 24px);
+  display: flex; flex-direction: column; overflow: hidden; border-radius: 26px; background: var(--cp-papel);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .45), 0 0 0 1px rgba(255, 255, 255, .06);
+  animation: cp-sube .45s cubic-bezier(.2, .8, .2, 1);
+}
+@keyframes cp-sube { from { opacity: 0; transform: translateY(18px) scale(.985); } to { opacity: 1; transform: none; } }
+
+/* cabecera */
+.cp-cab { flex: none; position: relative; display: flex; align-items: center; gap: 14px; padding: 18px 20px 16px; overflow: hidden;
+  background: radial-gradient(120% 170% at 0% 0%, var(--cp-navy2), var(--cp-navy) 52%, var(--cp-navy3)); color: var(--cp-crema); }
+.cp-cab::after { content: ""; position: absolute; right: -40px; top: -60px; width: 220px; height: 220px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(21, 190, 206, .22), rgba(21, 190, 206, 0) 70%); pointer-events: none; }
+.cp-iso { width: 46px; height: 46px; flex: none; }
+.cp-titulos { flex: 1; min-width: 0; }
+.cp-ceja { margin: 0; font: 700 .7rem/1 "Sora", sans-serif; letter-spacing: .18em; text-transform: uppercase; color: var(--cp-cian); }
+.cp-cab h3 { margin: 5px 0 0; font: 800 1.7rem/1.05 "Sora", sans-serif; letter-spacing: -.015em; color: #fff; }
+.cp-sub { margin: 4px 0 0; font-size: .84rem; font-weight: 600; color: rgba(255, 244, 227, .72); }
+.cp-cerrar { flex: none; align-self: flex-start; position: relative; z-index: 1; width: 40px; height: 40px; border: 0; border-radius: 50%;
+  background: rgba(255, 255, 255, .14); color: #fff; display: grid; place-items: center; cursor: pointer; transition: background .2s; }
+.cp-cerrar:hover { background: rgba(255, 255, 255, .26); }
+.cp-cerrar svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
+
+/* pestañas */
+.cp-barra { flex: none; padding: 10px 14px; background: var(--cp-papel); border-bottom: 1px solid rgba(15, 56, 90, .1); }
+.cp-tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px; }
+.cp-tabs::-webkit-scrollbar { display: none; }
+.cp-tab { flex: none; border: 0; cursor: pointer; border-radius: 999px; padding: 9px 16px; background: rgba(15, 56, 90, .07); color: var(--cp-navy);
+  font: 700 .9rem/1 "Sora", sans-serif; transition: background .2s, color .2s, box-shadow .2s; }
+.cp-tab:hover { background: rgba(15, 56, 90, .13); }
+.cp-tab.activo { background: var(--cp-navy); color: #fff; box-shadow: 0 4px 12px rgba(15, 56, 90, .3); }
+.cp-tab:focus-visible, .cp-cerrar:focus-visible { outline: 3px solid var(--cp-cian); outline-offset: 2px; }
+
+/* cuerpo */
+.cp-cuerpo { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 14px 18px 18px; }
+.cp-vaso-cinta { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; padding: 10px 14px; border-radius: 16px;
+  background: linear-gradient(90deg, rgba(166, 206, 56, .22), rgba(166, 206, 56, .08)); border-left: 5px solid var(--cp-verde); color: var(--cp-navy); }
+.cp-ico-c { width: 30px; height: 30px; flex: none; fill: none; stroke: var(--cp-navy); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.cp-vaso-cinta b { display: block; font: 800 .98rem/1.2 "Sora", sans-serif; }
+.cp-vaso-cinta span { display: block; font-size: .82rem; font-weight: 600; color: var(--cp-suave); margin-top: 2px; }
+
+.cp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 14px; align-items: start; }
+.cp-grid.cp-entra .cp-mundo { animation: cp-aparece .4s ease both; }
+.cp-grid.cp-entra .cp-mundo:nth-child(2) { animation-delay: .07s; }
+@keyframes cp-aparece { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+.cp-mundo { background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 1px 2px rgba(15, 56, 90, .06), 0 8px 22px rgba(15, 56, 90, .08); }
+.cp-mundo-cab { display: flex; align-items: center; gap: 12px; padding: 14px 16px 10px; border-top: 6px solid var(--cat);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--cat) 10%, #fff), #fff); }
+.cp-mundo-ico { width: 42px; height: 42px; flex: none; border-radius: 50%; background: var(--cat); color: var(--cat-t); display: grid; place-items: center; }
+.cp-ico { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.cp-mundo h4 { margin: 0; font: 800 1.12rem/1.15 "Sora", sans-serif; color: var(--cp-navy); letter-spacing: -.01em; }
+.cp-mundo-cab p { margin: 3px 0 0; font-size: .8rem; font-weight: 600; color: var(--cp-suave); line-height: 1.35; }
+.cp-mundo-nota { margin: 0 16px 14px; padding-top: 8px; border-top: 1px dashed rgba(15, 56, 90, .15); font-size: .78rem; font-weight: 600; color: var(--cp-suave); line-height: 1.4; }
+
+.cp-bloques { padding: 2px 16px 8px; }
+.cp-grid[data-n="1"] .cp-bloques { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(330px, 100%), 1fr)); column-gap: 30px; }
+.cp-grid[data-n="1"] .cp-bloque:only-child .cp-lista { columns: 2 320px; column-gap: 30px; }
+.cp-grupo { margin: 10px 0 2px; display: flex; align-items: center; gap: 10px; font: 700 .7rem/1 "Sora", sans-serif; letter-spacing: .16em;
+  text-transform: uppercase; color: color-mix(in srgb, var(--cat) 70%, #0F385A); }
+.cp-grupo::after { content: ""; flex: 1; height: 2px; background: var(--cat); opacity: .35; border-radius: 1px; }
+.cp-lista { list-style: none; margin: 0; padding: 0; }
+.cp-item { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding: 9px 0;
+  border-bottom: 1px dashed rgba(15, 56, 90, .13); break-inside: avoid; }
+.cp-item:last-child { border-bottom: 0; }
+.cp-n { flex: 1 1 170px; min-width: 0; font-weight: 800; font-size: .93rem; line-height: 1.3; color: var(--cp-texto); }
+.cp-nota { display: block; font-size: .74rem; font-weight: 600; color: var(--cp-suave); margin-top: 2px; }
+.cp-mini-vaso { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-left: 6px; vertical-align: -3px; border-radius: 50%; background: rgba(166, 206, 56, .3); }
+.cp-ico-s { width: 12px; height: 12px; fill: none; stroke: var(--cp-navy); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.cp-oz { display: flex; gap: 5px; flex: none; }
+.cp-t { display: flex; flex-direction: column; align-items: center; min-width: 62px; padding: 4px 8px 5px; border-radius: 10px; background: rgba(15, 56, 90, .05); }
+.cp-t small { font: 700 .62rem/1 "Sora", sans-serif; letter-spacing: .05em; color: var(--cp-suave); margin-bottom: 3px; }
+.cp-p { font: 700 .95rem/1 "Sora", sans-serif; color: var(--cp-navy); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cp-p i { font-style: normal; font-size: .62em; vertical-align: .42em; margin-right: 1px; color: var(--cp-suave); }
+.cp-oz.uno .cp-p { font-size: 1rem; }
+
+/* tienda: los tres vasos */
+.cp-vasos { display: flex; justify-content: center; align-items: flex-end; gap: 22px; padding: 14px 16px 6px; }
+.cp-vasito { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.cp-vaso-dib { position: relative; display: block; width: calc(34px + var(--k) * 8px); height: calc(46px + var(--k) * 12px); margin-top: 8px;
+  background: linear-gradient(90deg, #e3f1f4, #fff 45%, #cfe2e7); clip-path: polygon(0 0, 100% 0, 86% 100%, 14% 100%); }
+.cp-vaso-dib::before { content: ""; position: absolute; left: 0; right: 0; top: 30%; height: 34%; background: var(--cp-navy); }
+.cp-vaso-dib::after { content: ""; position: absolute; left: 50%; top: 38%; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: var(--cp-cian); }
+.cp-vasito b { font: 800 .82rem/1 "Sora", sans-serif; color: var(--cp-navy); }
+
+/* pie */
+.cp-pie { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px; }
+.cp-qr { flex: 1 1 320px; display: flex; align-items: center; gap: 12px; background: var(--cp-navy); color: rgba(255, 244, 227, .8);
+  border-radius: 16px; padding: 10px 16px 10px 10px; font-size: .82rem; line-height: 1.35; }
+.cp-qr svg { width: 62px; height: 62px; flex: none; border-radius: 8px; display: block; }
+.cp-qr b { display: block; font: 700 .92rem/1.2 "Sora", sans-serif; color: #fff; margin-bottom: 2px; }
+.cp-estrato { flex: 1 1 260px; margin: 0; display: flex; align-items: center; background: #fff; border-left: 5px solid var(--cp-oro);
+  border-radius: 6px 14px 14px 6px; padding: 10px 14px; font-size: .84rem; font-weight: 600; line-height: 1.4; }
+
+@media (max-width: 640px) {
+  .cp-capa, #carta.cp-capa { padding: 8px 8px calc(var(--guia-alto, 0px) + 8px); }
+  .cp-carta { margin-top: 0; border-radius: 20px; max-height: calc(100vh - var(--guia-alto, 0px) - 16px); max-height: calc(100dvh - var(--guia-alto, 0px) - 16px); }
+  .cp-cab { padding: 14px 14px 12px; gap: 10px; }
+  .cp-iso { width: 38px; height: 38px; }
+  .cp-cab h3 { font-size: 1.38rem; }
+  .cp-sub { font-size: .76rem; }
+  .cp-barra { padding: 8px 10px; }
+  .cp-tab { padding: 8px 13px; font-size: .84rem; }
+  .cp-cuerpo { padding: 12px 10px 14px; }
+  .cp-bloques { padding: 2px 12px 6px; }
+  .cp-mundo-cab { padding: 12px 12px 8px; }
+  .cp-t { min-width: 56px; padding: 4px 6px; }
+  .cp-p { font-size: .88rem; }
+}
+@media (prefers-reduced-motion: reduce) { .cp-carta, .cp-grid.cp-entra .cp-mundo { animation: none; } }
