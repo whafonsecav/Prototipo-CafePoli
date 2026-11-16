@@ -126,6 +126,12 @@
 // Dirección de la hoja de respuestas (Google Apps Script). Las respuestas llegan a un Google Sheet privado.
 const DESTINO = "https://script.google.com/macros/s/AKfycbyGaJVrcnDbMowIz4PdM8dNPmJeAUvNA_ZjsbPJsfSjzYbubugQSp-82nKz3KGM_lhb/exec";
 
+// Pasar la encuesta por WhatsApp: abre WhatsApp con el mensaje listo y la persona escoge a quién mandarlo.
+const ENLACE = "https://whafonsecav.github.io/Prototipo-CafePoli/encuesta/";
+const WHATSAPP = "https://wa.me/?text=" + encodeURIComponent(`Hoy por ti, mañana por mí: ¿me ayudas con una encuesta de 5 minutos? Es para crear Café Poli, una idea para la cafetería del City Campus. ${ENLACE}`);
+const ICONO_CHAT = `<svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.6a8.4 8.4 0 0 1-12.4 7.4L3.5 20.5l1.6-4.4A8.4 8.4 0 1 1 20.5 11.6z"/></svg>`;
+const botonWhatsApp = () => `<a class="btn principal" href="${WHATSAPP}" target="_blank" rel="noopener">${ICONO_CHAT}Pasarla por WhatsApp</a>`;
+
 const IDEAS = [
   "Pedir y pagar desde el celular y recoger sin hacer fila",
   "Regalarle un café a alguien del Poli desde el celular, con un mensaje",
@@ -158,7 +164,7 @@ const tomaCafe = () => R.cafe === "Sí" || R.cafe === "A veces";
 function encabezado() {
   const n = paso >= 1 && paso <= PASOS ? paso : 0;
   $("#paso-txt").textContent = n ? `Paso ${n} de ${PASOS}` : "";
-  $("#barra").style.width = paso > PASOS ? "100%" : `${(n / PASOS) * 100}%`;
+  $("#barra").style.width = typeof paso !== "number" || paso > PASOS ? "100%" : `${(n / PASOS) * 100}%`;  // pantallas finales: barra llena
 }
 
 // ---------- piezas
@@ -267,8 +273,7 @@ const PANTALLAS = {
       <p>Nos regalaste 5 minutos y con eso armamos un café pensado con la gente del Poli.</p>
       <p>¿Nos ayudas con una más? Pásale el enlace a alguien del City Campus.</p>
       <div class="acciones" style="flex-direction:column">
-        <a class="btn principal" id="compartir" href="https://wa.me/?text=${encodeURIComponent("Hoy por ti, mañana por mí: ayúdanos a crear Café Poli, la idea para la cafetería del City Campus. Son 5 minutos: https://whafonsecav.github.io/Prototipo-CafePoli/encuesta/")}" target="_blank" rel="noopener">Pasarla por WhatsApp</a>
-        <a class="btn azul" href="https://whafonsecav.github.io/Prototipo-CafePoli/" target="_blank" rel="noopener">Recorrer Café Poli en 360°</a>
+        ${botonWhatsApp()}
       </div>
       <p class="lema">Somos origen. Somos país. <b>Somos Poli.</b></p>
     </section>`,
@@ -278,7 +283,7 @@ const PANTALLAS = {
       <h1>¡Ya nos ayudaste!</h1>
       <p>Ya tenemos una respuesta con ese correo. Gracias de verdad: hoy por ti, mañana por mí.</p>
       <div class="acciones" style="flex-direction:column">
-        <a class="btn principal" href="https://wa.me/?text=${encodeURIComponent("Hoy por ti, mañana por mí: ayúdanos a crear Café Poli, la idea para la cafetería del City Campus. Son 5 minutos: https://whafonsecav.github.io/Prototipo-CafePoli/encuesta/")}" target="_blank" rel="noopener">Pasarla por WhatsApp</a>
+        ${botonWhatsApp()}
       </div>
       <p class="lema">Somos origen. Somos país. <b>Somos Poli.</b></p>
     </section>`,
@@ -294,6 +299,8 @@ const PANTALLAS = {
       <img class="poligreca" src="../app/img/poligreca-celebra.svg" alt="Poligreca celebrando">
       <h2>¡Gracias!</h2>
       <p>Esta encuesta es sobre la cafetería del City Campus, así que hasta aquí llegamos. Tu respuesta nos ayuda a saber cuánta gente va a cada sede.</p>
+      <p>¿Conoces a alguien que estudie o trabaje en el City Campus? Pásale la encuesta.</p>
+      <div class="acciones">${botonWhatsApp()}</div>
       <p class="lema">Somos origen. Somos país. <b>Somos Poli.</b></p>
     </section>`,
 };
