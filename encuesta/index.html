@@ -24,6 +24,7 @@
     :root {
       --navy: #0F385A; --navy-2: #0A2A45; --cian: #15BECE; --magenta: #E0006E; --oro: #FBAF17; --verde: #A6CE38;
       --cafe: #6B4226; --crema: #FFF4E3; --crema-2: #F5EBDD; --linea: #EADFCE; --texto: #1D2733; --suave: #56657A;
+      --borde: #73879D; --campo: #F4F8FC;  /* casillas: borde con contraste 3,5:1 o más sobre blanco */
       --f-titulo: "Sora", "Trebuchet MS", system-ui, sans-serif;
       --f-texto: "Nunito Sans", "Segoe UI", system-ui, sans-serif;
     }
@@ -54,42 +55,48 @@
     label.titulo, .titulo { display: block; font-weight: 800; font-size: 1.02rem; color: var(--navy); margin-bottom: 4px; line-height: 1.35; }
     .ayuda { font-size: .85rem; color: var(--suave); margin: 0 0 8px; }
     input[type=email], input[type=number], input[type=text], textarea {
-      width: 100%; font: inherit; font-size: 16px; color: var(--texto); background: var(--crema); border: 2px solid var(--linea);
-      border-radius: 12px; padding: 11px 12px; outline: none; transition: border-color .2s;
+      width: 100%; font: inherit; font-size: 16px; color: var(--texto); background: var(--campo); border: 2px solid var(--borde);
+      border-radius: 12px; padding: 11px 12px; outline: none; transition: border-color .2s, box-shadow .2s, background .2s;
+      box-shadow: inset 0 2px 3px rgba(15, 56, 90, .10);
     }
+    input::placeholder, textarea::placeholder { color: #7A8796; opacity: 1; }
+    input:hover, textarea:hover { border-color: var(--navy); }
     textarea { min-height: 76px; resize: vertical; line-height: 1.4; }
-    input:focus, textarea:focus { border-color: var(--cian); background: #fff; }
+    input:focus, textarea:focus { border-color: var(--navy); background: #fff; box-shadow: 0 0 0 4px rgba(21, 190, 206, .35); }
     .peso { position: relative; }
     .peso::before { content: "$"; position: absolute; left: 13px; top: 50%; transform: translateY(-50%); font-weight: 800; color: var(--suave); }
     .peso input { padding-left: 26px; }
     .opciones { display: flex; flex-wrap: wrap; gap: 8px; }
     .opciones button {
-      font: inherit; font-weight: 700; font-size: .95rem; color: var(--navy); background: var(--crema); border: 2px solid var(--linea);
+      font: inherit; font-weight: 700; font-size: .95rem; color: var(--navy); background: #fff; border: 2px solid var(--borde);
       border-radius: 99px; padding: 9px 14px; cursor: pointer; transition: all .15s; min-height: 44px;
     }
+    .opciones button:hover { border-color: var(--navy); background: var(--campo); }
     .opciones button[aria-pressed=true] { background: var(--navy); border-color: var(--navy); color: #fff; }
     .opciones.dias button { min-width: 48px; }
     .ideas { display: grid; gap: 8px; }
     .ideas button {
-      text-align: left; font: inherit; font-weight: 600; font-size: .95rem; color: var(--texto); background: var(--crema); border: 2px solid var(--linea);
+      text-align: left; font: inherit; font-weight: 600; font-size: .95rem; color: var(--texto); background: #fff; border: 2px solid var(--borde);
       border-radius: 14px; padding: 12px 12px 12px 46px; cursor: pointer; position: relative; min-height: 48px; line-height: 1.35;
     }
-    .ideas button::before { content: ""; position: absolute; left: 14px; top: 50%; width: 20px; height: 20px; margin-top: -10px; border-radius: 6px; border: 2px solid #b7a98f; background: #fff; }
+    .ideas button::before { content: ""; position: absolute; left: 14px; top: 50%; width: 20px; height: 20px; margin-top: -10px; border-radius: 6px; border: 2px solid var(--borde); background: #fff; }
+    .ideas button:not(:disabled):hover { border-color: var(--navy); }
     .ideas button[aria-pressed=true] { border-color: var(--magenta); background: #fff0f6; }
     .ideas button[aria-pressed=true]::before { background: var(--magenta); border-color: var(--magenta); box-shadow: inset 0 0 0 3px #fff; }
     .ideas.menos button[aria-pressed=true] { border-color: var(--navy); background: #eef3f8; }
     .ideas.menos button[aria-pressed=true]::before { background: var(--navy); border-color: var(--navy); border-radius: 50%; }
     .ideas.menos button::before { border-radius: 50%; }
-    .ideas button:disabled { opacity: .38; cursor: not-allowed; }
+    .ideas button:disabled { opacity: .45; cursor: not-allowed; background: var(--crema-2); border-style: dashed; }
     .contador { font-weight: 800; color: var(--magenta); font-size: .85rem; margin: 0 0 8px; }
-    .consentimiento { display: flex; gap: 10px; align-items: flex-start; text-align: left; background: #fff; border: 1px solid var(--linea); border-radius: 14px; padding: 12px; font-size: .88rem; line-height: 1.45; cursor: pointer; }
+    .consentimiento { display: flex; gap: 10px; align-items: flex-start; text-align: left; background: #fff; border: 2px solid var(--borde); border-radius: 14px; padding: 12px; font-size: .88rem; line-height: 1.45; cursor: pointer; }
     .consentimiento input { width: 22px; height: 22px; flex: none; margin: 1px 0 0; accent-color: var(--magenta); }
     .error { color: #b3003f; font-weight: 700; font-size: .85rem; margin: 6px 0 0; min-height: 0; }
     .acciones { display: flex; gap: 10px; margin-top: 18px; }
     .btn { flex: 1; font-family: var(--f-titulo); font-weight: 700; font-size: 1rem; border: 0; border-radius: 14px; padding: 14px 16px; cursor: pointer; min-height: 52px; text-decoration: none; text-align: center; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
     .btn.principal { background: var(--magenta); color: #fff; box-shadow: 0 6px 16px rgba(224, 0, 110, .28); }
     .btn.principal:disabled { background: #d9c9cf; box-shadow: none; cursor: not-allowed; }
-    .btn.secundario { background: #fff; color: var(--navy); border: 2px solid var(--linea); flex: 0 0 auto; }
+    .btn.secundario { background: #fff; color: var(--navy); border: 2px solid var(--borde); flex: 0 0 auto; }
+    button:focus-visible, .btn:focus-visible, .consentimiento:focus-within { outline: 3px solid var(--cian); outline-offset: 2px; }
     .btn.azul { background: var(--navy); color: #fff; }
     .lema { font-family: var(--f-titulo); font-weight: 700; color: var(--navy); opacity: .75; text-align: center; font-size: .85rem; margin: 20px 0 0; }
     .lema b { color: var(--magenta); }
