@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#0F385A">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Café Poli · Hoy por ti, mañana por mí">
-  <meta property="og:description" content="Regálanos 5 minutos y ayúdanos a crear el café del City Campus. Respuestas cortas, sin respuestas buenas ni malas.">
+  <meta property="og:description" content="Regálanos 5 minutos y ayúdanos a crear el café del City Campus. Casi todo es tocar y elegir; no hay respuestas buenas ni malas.">
   <meta property="og:image" content="https://whafonsecav.github.io/Prototipo-CafePoli/encuesta/vista-previa.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -35,7 +35,8 @@
     header { background: var(--navy); color: #fff; padding: calc(14px + env(safe-area-inset-top, 0px)) 18px 14px; position: sticky; top: 0; z-index: 5; box-shadow: 0 4px 16px rgba(15, 56, 90, .25); }
     header .fila { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     header img { height: 34px; display: block; }
-    header .paso { font-family: var(--f-titulo); font-size: .78rem; font-weight: 700; opacity: .85; white-space: nowrap; }
+    header .paso { font-family: var(--f-titulo); font-size: .78rem; font-weight: 700; opacity: .9; text-align: right; line-height: 1.3; }
+    header .paso small { display: block; font-family: var(--f-texto); font-weight: 600; opacity: .8; }
     .barra { height: 6px; background: rgba(255, 255, 255, .18); border-radius: 99px; margin-top: 12px; overflow: hidden; }
     .barra span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--cian), var(--magenta)); border-radius: 99px; transition: width .4s ease; }
     main { flex: 1; padding: 22px 18px 28px; }
@@ -49,8 +50,14 @@
     .datos { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 14px 0 18px; padding: 0; list-style: none; }
     .datos li { background: #fff; border: 1px solid var(--linea); border-radius: 99px; padding: 6px 12px; font-weight: 700; font-size: .85rem; color: var(--navy); }
     .datos li b { color: var(--magenta); }
+
+    /* Poligreca acompaña cada paso */
+    .guia { display: flex; gap: 10px; align-items: flex-end; margin: 0 0 14px; }
+    .guia img { width: 54px; height: 54px; flex: none; }
+    .guia p { position: relative; margin: 0 0 6px; background: #fff; border: 2px solid var(--linea); border-radius: 16px 16px 16px 4px; padding: 9px 12px; font-size: .9rem; font-weight: 600; color: var(--navy); line-height: 1.4; }
+
     .tarjeta { background: #fff; border-radius: 18px; padding: 16px; box-shadow: 0 1px 2px rgba(15, 56, 90, .06), 0 6px 18px rgba(15, 56, 90, .08); margin-bottom: 14px; }
-    .pregunta { margin-bottom: 18px; }
+    .pregunta { margin-bottom: 22px; }
     .pregunta:last-child { margin-bottom: 0; }
     label.titulo, .titulo { display: block; font-weight: 800; font-size: 1.02rem; color: var(--navy); margin-bottom: 4px; line-height: 1.35; }
     .ayuda { font-size: .85rem; color: var(--suave); margin: 0 0 8px; }
@@ -62,18 +69,38 @@
     input::placeholder, textarea::placeholder { color: #7A8796; opacity: 1; }
     input:hover, textarea:hover { border-color: var(--navy); }
     textarea { min-height: 76px; resize: vertical; line-height: 1.4; }
+    textarea:disabled { opacity: .45; cursor: not-allowed; }
     input:focus, textarea:focus { border-color: var(--navy); background: #fff; box-shadow: 0 0 0 4px rgba(21, 190, 206, .35); }
     .peso { position: relative; }
     .peso::before { content: "$"; position: absolute; left: 13px; top: 50%; transform: translateY(-50%); font-weight: 800; color: var(--suave); }
     .peso input { padding-left: 26px; }
+
+    /* opciones: círculo = una sola; cuadro = varias */
     .opciones { display: flex; flex-wrap: wrap; gap: 8px; }
     .opciones button {
+      display: inline-flex; align-items: center; gap: 8px; text-align: left;
       font: inherit; font-weight: 700; font-size: .95rem; color: var(--navy); background: #fff; border: 2px solid var(--borde);
-      border-radius: 99px; padding: 9px 14px; cursor: pointer; transition: all .15s; min-height: 44px;
+      border-radius: 99px; padding: 9px 14px 9px 11px; cursor: pointer; transition: background .15s, border-color .15s, color .15s; min-height: 44px; line-height: 1.25;
     }
+    .opciones button::before { content: ""; flex: none; width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--borde); background: #fff; display: grid; place-items: center; font-size: 12px; font-weight: 900; line-height: 1; }
+    .opciones.multi button { border-radius: 14px; }
+    .opciones.multi button::before { border-radius: 5px; }
     .opciones button:hover { border-color: var(--navy); background: var(--campo); }
     .opciones button[aria-pressed=true] { background: var(--navy); border-color: var(--navy); color: #fff; }
-    .opciones.dias button { min-width: 48px; }
+    .opciones button[aria-pressed=true]::before { border-color: #fff; background: var(--cian); box-shadow: inset 0 0 0 3px #fff; }
+    .opciones.multi button[aria-pressed=true]::before { content: "✓"; background: #fff; color: var(--navy); box-shadow: none; }
+    .opciones.dias button { min-width: 64px; justify-content: center; }
+    .opciones.lista { flex-direction: column; }
+    .opciones.lista button { width: 100%; border-radius: 14px; }
+
+    /* escala de 1 a 5 */
+    .escala { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+    .escala button { font: inherit; font-family: var(--f-titulo); font-weight: 800; font-size: 1.1rem; color: var(--navy); background: #fff; border: 2px solid var(--borde); border-radius: 12px; min-height: 48px; cursor: pointer; transition: background .15s, color .15s; }
+    .escala button:hover { border-color: var(--navy); background: var(--campo); }
+    .escala button[aria-pressed=true] { background: var(--navy); border-color: var(--navy); color: #fff; }
+    .extremos { display: flex; justify-content: space-between; font-size: .8rem; color: var(--suave); font-weight: 700; margin: 6px 2px 8px; }
+    .escala-extra { margin-top: 4px; }
+
     .ideas { display: grid; gap: 8px; }
     .ideas button {
       text-align: left; font: inherit; font-weight: 600; font-size: .95rem; color: var(--texto); background: #fff; border: 2px solid var(--borde);
@@ -88,23 +115,27 @@
     .ideas.menos button::before { border-radius: 50%; }
     .ideas button:disabled { opacity: .45; cursor: not-allowed; background: var(--crema-2); border-style: dashed; }
     .contador { font-weight: 800; color: var(--magenta); font-size: .85rem; margin: 0 0 8px; }
+
+    .concepto { background: var(--navy); color: #fff; border-radius: 18px; padding: 16px 16px 14px; margin-bottom: 14px; }
+    .concepto h3 { font-family: var(--f-titulo); font-size: 1.05rem; margin: 0 0 8px; color: #fff; }
+    .concepto ul { margin: 0; padding-left: 20px; line-height: 1.5; font-size: .93rem; }
+    .concepto li::marker { color: var(--cian); }
+
     .consentimiento { display: flex; gap: 10px; align-items: flex-start; text-align: left; background: #fff; border: 2px solid var(--borde); border-radius: 14px; padding: 12px; font-size: .88rem; line-height: 1.45; cursor: pointer; }
     .consentimiento input { width: 22px; height: 22px; flex: none; margin: 1px 0 0; accent-color: var(--magenta); }
     .error { color: #b3003f; font-weight: 700; font-size: .85rem; margin: 6px 0 0; min-height: 0; }
+    .error:empty { display: none; }
     .acciones { display: flex; gap: 10px; margin-top: 18px; }
     .btn { flex: 1; font-family: var(--f-titulo); font-weight: 700; font-size: 1rem; border: 0; border-radius: 14px; padding: 14px 16px; cursor: pointer; min-height: 52px; text-decoration: none; text-align: center; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
     .btn.principal { background: var(--magenta); color: #fff; box-shadow: 0 6px 16px rgba(224, 0, 110, .28); }
     .btn.principal:disabled { background: #d9c9cf; box-shadow: none; cursor: not-allowed; }
     .btn.secundario { background: #fff; color: var(--navy); border: 2px solid var(--borde); flex: 0 0 auto; }
     button:focus-visible, .btn:focus-visible, .consentimiento:focus-within { outline: 3px solid var(--cian); outline-offset: 2px; }
-    .btn.azul { background: var(--navy); color: #fff; }
     .lema { font-family: var(--f-titulo); font-weight: 700; color: var(--navy); opacity: .75; text-align: center; font-size: .85rem; margin: 20px 0 0; }
     .lema b { color: var(--magenta); }
     .gracias { text-align: center; }
     .gracias .poligreca { width: 170px; height: 170px; display: block; margin: 0 auto 4px; }
-    .oculto { display: none !important; }
     .trampa { position: absolute; left: -5000px; width: 1px; height: 1px; overflow: hidden; }
-    .nota { font-size: .8rem; color: var(--suave); text-align: center; margin-top: 14px; }
     footer { text-align: center; font-size: .75rem; color: var(--suave); padding: 0 18px calc(18px + env(safe-area-inset-bottom, 0px)); }
     @media (min-width: 600px) { main { padding: 28px 26px 32px; } h1 { font-size: 2.1rem; } }
   </style>
@@ -125,6 +156,7 @@
 <script>
 // Dirección de la hoja de respuestas (Google Apps Script). Las respuestas llegan a un Google Sheet privado.
 const DESTINO = "https://script.google.com/macros/s/AKfycbyGaJVrcnDbMowIz4PdM8dNPmJeAUvNA_ZjsbPJsfSjzYbubugQSp-82nKz3KGM_lhb/exec";
+const VERSION = "v2";
 
 // Pasar la encuesta por WhatsApp: abre WhatsApp con el mensaje listo y la persona escoge a quién mandarlo.
 const ENLACE = "https://whafonsecav.github.io/Prototipo-CafePoli/encuesta/";
@@ -132,6 +164,11 @@ const WHATSAPP = "https://wa.me/?text=" + encodeURIComponent(`Hoy por ti, mañan
 const ICONO_CHAT = `<svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.6a8.4 8.4 0 0 1-12.4 7.4L3.5 20.5l1.6-4.4A8.4 8.4 0 1 1 20.5 11.6z"/></svg>`;
 const botonWhatsApp = () => `<a class="btn principal" href="${WHATSAPP}" target="_blank" rel="noopener">${ICONO_CHAT}Pasarla por WhatsApp</a>`;
 
+// ---------- respuestas posibles (los mismos textos los cuenta el Google Sheet)
+const T5 = ["Seguro sí", "Probablemente sí", "No sé", "Probablemente no", "Seguro no"];
+const CAFES = ["Tinto", "Café con leche o capuchino", "Café frío"];
+const FRANJAS_DIA = ["Temprano (antes de las 9 a. m.)", "A media mañana", "Al mediodía", "En la tarde"];
+const FRANJAS_NOCHE = ["Antes de clase (antes de las 6:40 p. m.)", "En el descanso de las 8:20 p. m.", "Al salir de clase"];
 const IDEAS = [
   "Pedir y pagar desde el celular y recoger sin hacer fila",
   "Regalarle un café a alguien del Poli desde el celular, con un mensaje",
@@ -141,17 +178,20 @@ const IDEAS = [
   "Que la cafetería te salude el día de tu cumpleaños",
   "Ver en pantallas los logros y las noticias del Poli",
   "Sumar puntos con tus compras y cambiarlos por productos",
+  "Juegos de mesa prestados con tu carné",
+  "Un rincón de libros: toma uno, deja otro",
 ];
-const PASOS = 6;
-const CLAVE = "cafepoli-encuesta-v1";
-let R = { ideas2: [], menos: "" };
+
+const CLAVE = "cafepoli-encuesta-v2";
+let R = { ideas2: [], menos: "", orden: {} };
 let paso = 0;
 let inicio = 0;
 let enviando = false;
 
 const guardado = (() => { try { return JSON.parse(localStorage.getItem(CLAVE) || "null"); } catch (e) { return null; } })();
 if (guardado && guardado.R) { R = guardado.R; inicio = guardado.inicio || 0; }
-if (!R.orden) R.orden = IDEAS.map((_, i) => i).sort(() => Math.random() - 0.5);  // cada persona ve las ideas en otro orden
+if (!R.orden || Array.isArray(R.orden)) R.orden = {};
+const azar = (n) => Array.from({ length: n }, (_, i) => i).sort(() => Math.random() - 0.5);
 function guardar() { try { localStorage.setItem(CLAVE, JSON.stringify({ R, inicio })); } catch (e) {} }
 function yaRespondio() { try { return localStorage.getItem(CLAVE + "-enviada") === "1"; } catch (e) { return false; } }
 
@@ -160,33 +200,174 @@ const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<
 const noche = () => R.jornada === "Nocturna" || R.jornada === "Las dos";
 const dia = () => R.jornada === "Diurna" || R.jornada === "Las dos";
 const tomaCafe = () => R.cafe === "Sí" || R.cafe === "A veces";
+const estudiante = () => R.rol === "Estudiante";
+
+// ---------- el cuestionario: cada pregunta apunta a una hipótesis (H1 a H8) o a un dato del modelo
+// tipos: correo, edad, abierta, plata, unica, multi (varias), escala (1 a 5)
+const PASOS = [
+  null,
+  { titulo: "Primero, sobre ti", min: 5,
+    guia: "Arranquemos por lo básico. Tu correo solo sirve para saber que eres del Poli y que nadie responda dos veces.",
+    preguntas: [
+      { id: "correo", tipo: "correo", t: "Tu correo del Poli" },
+      { id: "edad", tipo: "edad", t: "¿Cuántos años tienes?" },
+      { id: "genero", tipo: "unica", t: "¿Con qué género te identificas?", op: ["Mujer", "Hombre", "Otro", "Prefiero no decirlo"] },
+      { id: "rol", tipo: "unica", t: "En el Poli eres…", op: ["Estudiante", "Docente", "Administrativo"] },
+      { id: "jornada", tipo: "unica", t: "¿En qué jornada estudias o trabajas?", op: ["Diurna", "Nocturna", "Las dos"] },
+      { id: "dias", tipo: "unica", t: "¿Cuántos días a la semana vienes al City Campus?", op: ["1", "2", "3", "4", "5", "6", "Ninguno"], clase: "dias" },
+    ] },
+  { titulo: "Tu pausa de hoy", min: 4,
+    guia: "Aquí no hay respuestas buenas ni malas: cuéntanos tu pausa tal como es, no como debería ser.",
+    preguntas: [
+      { id: "pausa", tipo: "abierta", t: "Piensa en tu última pausa en el City Campus: ¿qué comiste o tomaste, de dónde salió y por qué escogiste eso?", ayuda: "Con una o dos frases basta." },
+      { id: "franjas", tipo: "multi", t: "¿En qué momentos sueles hacer una pausa en el campus?", ayuda: "Elige todas las que apliquen.",
+        op: () => [...(dia() || !R.jornada ? FRANJAS_DIA : []), ...(noche() ? FRANJAS_NOCHE : [])], clase: "lista" },
+      { id: "donde", tipo: "multi", t: "¿De dónde sale casi siempre lo que comes o tomas en tus pausas?", ayuda: "Elige todas las que apliquen.",
+        op: ["En la cafetería del City Campus", "En una tienda o puesto cerca del campus", "En una cadena de cafés", "Lo traigo de la casa", "No como ni tomo nada en mis pausas"],
+        solo: ["No como ni tomo nada en mis pausas"], clase: "lista" },
+      { id: "razon", tipo: "multi", t: "Cuando escoges dónde comprar en una pausa, ¿qué pesa más?", ayuda: "Elige hasta 2.", max: 2, azar: true,
+        op: ["El precio", "La rapidez, sin fila", "Que quede cerca", "El sabor y la calidad", "Un lugar cómodo para quedarme", "La atención"] },
+      { id: "satisf", tipo: "escala", t: "Hoy, ¿qué tan bien resuelve tu pausa la cafetería del City Campus?", extremos: ["1 = Nada bien", "5 = Muy bien"], extra: "No la uso" },
+    ] },
+  { titulo: "Lo que tomas y lo que pagas", min: 4,
+    guia: "Hablemos de bolsillo, sin pena: aquí cada peso cuenta y nadie te va a juzgar.",
+    preguntas: [
+      { id: "cafe", tipo: "unica", t: "¿Tomas café?", op: ["Sí", "A veces", "No"], rehace: true },
+      { id: "bebidas", tipo: "multi", t: "En tus pausas, ¿qué sueles tomar?", ayuda: "Elige todas las que apliquen.",
+        op: () => [...(R.cafe === "No" ? [] : CAFES), "Aromática o té", "Chocolate o Milo", "Jugo", "Gaseosa", "Agua", "Bebida energizante", "Nada"], solo: ["Nada"] },
+      { id: "gasto", tipo: "plata", t: "En una pausa normal en el campus, ¿cuánto gastas más o menos?", ayuda: "Si no gastas nada, escribe 0.", minv: 0 },
+      { id: "caro", tipo: "plata", si: tomaCafe, t: "¿Desde qué precio un tinto pequeño te parecería caro, aunque igual lo comprarías?", minv: 100 },
+      { id: "muycaro", tipo: "plata", si: tomaCafe, t: "¿Y a qué precio ya sería tan caro que no lo comprarías?", minv: 100, mayorQue: "caro" },
+    ] },
+  { titulo: "La fila y el reloj", min: 3,
+    guia: "La fila: ese enemigo silencioso de toda pausa. Cuéntanos cómo te va con ella.",
+    preguntas: [
+      { id: "tiempo", tipo: "unica", si: dia, t: "Entre clases, ¿cuánto tiempo tienes casi siempre para tu pausa?",
+        op: ["Menos de 10 minutos", "De 10 a 20 minutos", "De 20 a 40 minutos", "Más de 40 minutos"] },
+      { id: "fila", tipo: "unica", t: "¿Te ha pasado que por la fila te quedas sin comprar o llegas tarde a clase?", op: ["Seguido", "A veces", "Casi nunca"] },
+      { id: "descanso", tipo: "unica", si: noche, t: "En el descanso de las 8:20 p. m., ¿qué haces casi siempre?",
+        op: ["Compro algo en el campus", "Salgo a comprar afuera", "Como algo que traje", "No como ni tomo nada"], clase: "lista" },
+      { id: "noche", tipo: "unica", si: noche, t: "Si a esa hora la cafetería tuviera café, aromática, chocolate y algo caliente de comer, ¿comprarías?", op: T5 },
+      { id: "app", tipo: "unica", t: "Si pudieras pedir y pagar desde el celular y solo pasar a recoger, ¿lo usarías?", op: T5 },
+      { id: "pago", tipo: "multi", t: "¿Cómo prefieres pagar?", ayuda: "Elige todas las que uses.",
+        op: ["Efectivo", "Nequi", "Daviplata", "Tarjeta débito o crédito", "Transferencia o QR del banco (Bre-B)"] },
+    ] },
+  { titulo: "El lugar", min: 2,
+    guia: "¡Ya vas por la mitad! Ahora, el espacio: ¿cómo usas la cafetería y cómo te gustaría usarla?",
+    preguntas: [
+      { id: "usos", tipo: "multi", t: "Cuando te quedas en la cafetería del City Campus, ¿qué haces?", ayuda: "Elige todas las que apliquen.",
+        op: ["Comer", "Calentar comida en el microondas", "Estudiar o hacer trabajos", "Hablar con amigos", "Descansar o usar el celular", "Esperar la siguiente clase", "No me quedo: compro y me voy"],
+        solo: ["No me quedo: compro y me voy"] },
+      { id: "zona", tipo: "unica", t: "Si la cafetería tuviera dos zonas, una para conversar y otra en silencio para estudiar, ¿cuál usarías más?",
+        op: ["La de conversar", "La de estudiar en silencio", "Las dos, según el día", "Ninguna: compro y me voy"], clase: "lista" },
+      { id: "parciales", tipo: "multi", si: estudiante, t: "En semana de parciales, ¿qué cambia en tu pausa?", ayuda: "Elige todas las que apliquen.",
+        op: ["Tomo más café o algo que me dé energía", "Me quedo más tiempo en el campus", "Busco un lugar en silencio", "Como menos o a deshoras", "Gasto más", "Nada cambia"],
+        solo: ["Nada cambia"] },
+      { id: "unacosa", tipo: "abierta", t: "Si pudieras pedirle una sola cosa a la cafetería del City Campus, ¿qué sería?", ayuda: "Con una frase basta." },
+    ] },
+  { titulo: "Tú y el Poli", min: 2,
+    guia: "Una de orgullo Poli. Tranqui: no es examen y no hay nota.",
+    preguntas: [
+      { id: "logro", tipo: "abierta", t: "¿Conoces algún premio o logro reciente del Poli? ¿Cuál?", ayuda: "Escríbelo como lo recuerdes.", nada: "No conozco ninguno" },
+      { id: "pantallas", tipo: "unica", t: "¿Te gustaría ver en las pantallas de la cafetería los logros y las noticias del Poli?", op: ["Sí, me gustaría", "Me da igual", "Prefiero que no"] },
+      { id: "invito", tipo: "unica", t: "¿Alguna vez le has invitado un café o algo de comer a alguien del Poli?", op: ["Sí, seguido", "Alguna vez", "Nunca"] },
+      { id: "regalo", tipo: "unica", t: "Si pudieras regalarle un café a alguien desde el celular, con un mensaje tuyo, ¿lo harías?", op: T5 },
+      { id: "vaso", tipo: "unica", t: "Si por traer tu propio vaso o termo te descontaran $300, ¿lo traerías?", op: ["Casi siempre", "A veces", "Casi nunca"] },
+    ] },
+  { titulo: "Las ideas", min: 1,
+    guia: "¡Último paso! Escoge pensando en lo que de verdad usarías, no en lo que suena bonito.",
+    preguntas: [
+      { id: "ideas2", tipo: "ideas" },
+      { id: "menos", tipo: "menos" },
+      { id: "concepto", tipo: "concepto" },
+      { id: "intencion", tipo: "unica", t: "Con todo esto junto, ¿usarías Café Poli?", op: T5 },
+      { id: "cambio", tipo: "abierta", t: "¿Qué le cambiarías o agregarías?", ayuda: "Opcional.", opcional: true },
+    ] },
+];
+const TOTAL = PASOS.length - 1;
+
+const visible = (q) => !q.si || q.si();
+function opciones(q) {
+  const base = typeof q.op === "function" ? q.op() : q.op;
+  if (!q.azar) return base;
+  if (!R.orden[q.id] || R.orden[q.id].length !== base.length) R.orden[q.id] = azar(base.length);  // cada persona ve otro orden
+  return R.orden[q.id].map((i) => base[i]);
+}
+function ideasEnOrden() {
+  if (!R.orden.ideas || R.orden.ideas.length !== IDEAS.length) R.orden.ideas = azar(IDEAS.length);
+  return R.orden.ideas.map((i) => IDEAS[i]);
+}
+// quita lo que ya no aplica (por ejemplo, cafés marcados por quien luego dice que no toma café)
+function depurar(q) {
+  if (q.tipo === "multi") { const ok = opciones(q); R[q.id] = (Array.isArray(R[q.id]) ? R[q.id] : []).filter((o) => ok.includes(o)); }
+}
 
 function encabezado() {
-  const n = paso >= 1 && paso <= PASOS ? paso : 0;
-  $("#paso-txt").textContent = n ? `Paso ${n} de ${PASOS}` : "";
-  $("#barra").style.width = typeof paso !== "number" || paso > PASOS ? "100%" : `${(n / PASOS) * 100}%`;  // pantallas finales: barra llena
+  const n = typeof paso === "number" && paso >= 1 && paso <= TOTAL ? paso : 0;
+  const min = n ? PASOS[n].min : 0;
+  $("#paso-txt").innerHTML = n ? `Paso ${n} de ${TOTAL}<small>${min <= 1 ? "falta 1 minuto" : `faltan unos ${Math.round(min)} min`}</small>` : "";
+  $("#barra").style.width = typeof paso !== "number" ? "100%" : `${((n ? n - 1 : 0) / TOTAL) * 100}%`;  // pantallas finales: barra llena
 }
 
 // ---------- piezas
-function texto(id, titulo, ayuda = "Con una frase basta.") {
-  return `<div class="pregunta"><label class="titulo" for="${id}">${titulo}</label>${ayuda ? `<p class="ayuda">${ayuda}</p>` : ""}
-    <textarea id="${id}" data-campo="${id}" maxlength="5000" rows="2" placeholder="Escribe aquí">${esc(R[id])}</textarea><p class="error" data-error="${id}"></p></div>`;
-}
-function plata(id, titulo, ayuda = "") {
-  return `<div class="pregunta"><label class="titulo" for="${id}">${titulo}</label>${ayuda ? `<p class="ayuda">${ayuda}</p>` : ""}
-    <div class="peso"><input id="${id}" data-campo="${id}" type="number" inputmode="numeric" min="0" step="100" placeholder="0" value="${R[id] ?? ""}"></div><p class="error" data-error="${id}"></p></div>`;
-}
-function opciones(id, titulo, lista, ayuda = "", clase = "") {
-  return `<div class="pregunta" role="group" aria-labelledby="t-${id}"><span class="titulo" id="t-${id}">${titulo}</span>${ayuda ? `<p class="ayuda">${ayuda}</p>` : ""}
-    <div class="opciones ${clase}">${lista.map((o) => `<button type="button" data-opcion="${id}" data-valor="${esc(o)}" aria-pressed="${String(R[id]) === String(o)}">${esc(o)}</button>`).join("")}</div>
-    <p class="error" data-error="${id}"></p></div>`;
-}
-function botones(siguiente = "Siguiente") {
-  return `<div class="acciones">${paso > 1 ? `<button type="button" class="btn secundario" id="atras" aria-label="Atrás">Atrás</button>` : ""}
-    <button type="button" class="btn principal" id="seguir">${siguiente}</button></div>`;
+const error = (id) => `<p class="error" data-error="${id}"></p>`;
+const cab = (q, para = "") => `<${para ? `label for="${para}"` : `span id="t-${q.id}"`} class="titulo">${q.t}</${para ? "label" : "span"}>${q.ayuda ? `<p class="ayuda">${q.ayuda}</p>` : ""}`;
+function pieza(q) {
+  const v = R[q.id];
+  switch (q.tipo) {
+    case "correo":
+      return `<div class="pregunta">${cab(q, q.id)}<input id="${q.id}" data-campo="${q.id}" type="email" inputmode="email" autocomplete="email" placeholder="usuario@poligran.edu.co" value="${esc(v)}">${error(q.id)}</div>`;
+    case "edad":
+      return `<div class="pregunta">${cab(q, q.id)}<input id="${q.id}" data-campo="${q.id}" type="number" inputmode="numeric" min="14" max="99" placeholder="Edad" value="${esc(v)}">${error(q.id)}</div>`;
+    case "plata":
+      return `<div class="pregunta">${cab(q, q.id)}<div class="peso"><input id="${q.id}" data-campo="${q.id}" type="number" inputmode="numeric" min="0" step="100" placeholder="0" value="${esc(v)}"></div>${error(q.id)}</div>`;
+    case "abierta": {
+      const nada = q.nada && v === q.nada;
+      return `<div class="pregunta">${cab(q, q.id)}<textarea id="${q.id}" data-campo="${q.id}" maxlength="5000" rows="2" placeholder="Escribe aquí" ${nada ? "disabled" : ""}>${nada ? "" : esc(v)}</textarea>
+        ${q.nada ? `<div class="opciones multi" style="margin-top:8px"><button type="button" data-nada="${q.id}" aria-pressed="${nada}">${esc(q.nada)}</button></div>` : ""}${error(q.id)}</div>`;
+    }
+    case "unica":
+      return `<div class="pregunta" role="group" aria-labelledby="t-${q.id}">${cab(q)}<div class="opciones ${q.clase || ""}">${opciones(q).map((o) =>
+        `<button type="button" data-opcion="${q.id}" data-valor="${esc(o)}" aria-pressed="${String(v) === o}">${esc(o)}</button>`).join("")}</div>${error(q.id)}</div>`;
+    case "multi": {
+      const sel = Array.isArray(v) ? v : [];
+      return `<div class="pregunta" role="group" aria-labelledby="t-${q.id}">${cab(q)}<div class="opciones multi ${q.clase || ""}">${opciones(q).map((o) =>
+        `<button type="button" data-multi="${q.id}" data-valor="${esc(o)}" aria-pressed="${sel.includes(o)}">${esc(o)}</button>`).join("")}</div>${error(q.id)}</div>`;
+    }
+    case "escala":
+      return `<div class="pregunta" role="group" aria-labelledby="t-${q.id}">${cab(q)}<div class="escala">${[1, 2, 3, 4, 5].map((n) =>
+        `<button type="button" data-opcion="${q.id}" data-valor="${n}" aria-pressed="${String(v) === String(n)}" aria-label="${n} de 5">${n}</button>`).join("")}</div>
+        <div class="extremos"><span>${q.extremos[0]}</span><span>${q.extremos[1]}</span></div>
+        ${q.extra ? `<div class="opciones escala-extra"><button type="button" data-opcion="${q.id}" data-valor="${esc(q.extra)}" aria-pressed="${v === q.extra}">${esc(q.extra)}</button></div>` : ""}${error(q.id)}</div>`;
+    case "ideas":
+      return `<div class="pregunta" role="group" aria-labelledby="t-ideas2"><span class="titulo" id="t-ideas2">De estas ideas, ¿cuáles 2 usarías más?</span>
+        <p class="contador" id="cuenta2">${R.ideas2.length} de 2</p>
+        <div class="ideas">${ideasEnOrden().map((t) => `<button type="button" data-idea2="${esc(t)}" aria-pressed="${R.ideas2.includes(t)}">${esc(t)}</button>`).join("")}</div>${error("ideas2")}</div>`;
+    case "menos":
+      return `<div class="pregunta" role="group" aria-labelledby="t-menos"><span class="titulo" id="t-menos">¿Y cuál te serviría menos?</span>
+        <div class="ideas menos">${ideasEnOrden().map((t) => `<button type="button" data-menos="${esc(t)}" aria-pressed="${R.menos === t}" ${R.ideas2.includes(t) ? "disabled" : ""}>${esc(t)}</button>`).join("")}</div>${error("menos")}</div>`;
+    case "concepto":
+      return `</div><div class="concepto"><h3>Café Poli, en pocas palabras</h3><ul>
+        <li>Un café atendido por personas, en la cafetería del City Campus.</li>
+        <li>Café colombiano de origen: el tinto pequeño a $2.000.</li>
+        <li>Bebidas sin café y algo caliente hasta el cierre, también en el descanso de la noche.</li>
+        <li>Una zona para conversar y otra en silencio para estudiar.</li>
+        <li>Una app para pedir y pagar sin hacer fila.</li></ul></div><div class="tarjeta">`;
+  }
+  return "";
 }
 
 // ---------- pantallas
+function pantallaPaso(n) {
+  const p = PASOS[n];
+  p.preguntas.forEach(depurar);
+  return `<h2>${p.titulo}</h2>
+    <div class="guia"><img src="../app/img/poligreca-saluda.svg" alt=""><p>${p.guia}</p></div>
+    <div class="tarjeta">${p.preguntas.filter(visible).map(pieza).join("")}</div>
+    ${n === 1 ? `<input class="trampa" id="web" tabindex="-1" autocomplete="off" aria-hidden="true">` : ""}
+    <div class="acciones">${n > 1 ? `<button type="button" class="btn secundario" id="atras">Atrás</button>` : ""}
+      <button type="button" class="btn principal" id="seguir">${n === TOTAL ? "Enviar" : "Siguiente"}</button></div>`;
+}
 const PANTALLAS = {
   0: () => `
     <section class="intro">
@@ -194,87 +375,20 @@ const PANTALLAS = {
       <h1>Hoy por ti, <span class="acento">mañana&nbsp;por&nbsp;mí</span></h1>
       <p>¡Hola! Somos William y Mariana, de Mercadeo y Publicidad del Poli. Estamos creando <b>Café Poli</b>, una idea para la cafetería del City Campus, y queremos armarla contigo.</p>
       <p>Cuéntanos lo que de verdad haces en tus pausas. No hay respuestas buenas ni malas, y si no tomas café, tu opinión cuenta igual.</p>
-      <ul class="datos"><li><b>5</b> minutos</li><li>Respuestas cortas</li><li>Desde el celular</li></ul>
+      <ul class="datos"><li><b>5</b> minutos</li><li>Casi todo es tocar y elegir</li><li>Desde el celular</li></ul>
       <label class="consentimiento"><input type="checkbox" id="acepto" ${R.acepto ? "checked" : ""}>
         <span>Acepto que usen mis respuestas solo para este trabajo de clase. Mi correo sirve para saber que soy del Poli y que nadie responda dos veces; no se publica ni se comparte (Ley 1581 de 2012).</span></label>
-      <p class="error" data-error="acepto"></p>
+      ${error("acepto")}
       <div class="acciones"><button type="button" class="btn principal" id="seguir">Empezar</button></div>
       <p class="lema">Somos origen. Somos país. <b>Somos Poli.</b></p>
     </section>`,
-  1: () => `
-    <h2>Primero, sobre ti</h2>
-    <div class="tarjeta">
-      <div class="pregunta"><label class="titulo" for="correo">Tu correo del Poli</label>
-        <input id="correo" data-campo="correo" type="email" inputmode="email" autocomplete="email" placeholder="usuario@poligran.edu.co" value="${esc(R.correo)}">
-        <p class="error" data-error="correo"></p></div>
-      <div class="pregunta"><label class="titulo" for="edad">¿Cuántos años tienes?</label>
-        <input id="edad" data-campo="edad" type="number" inputmode="numeric" min="14" max="99" placeholder="Edad" value="${R.edad ?? ""}">
-        <p class="error" data-error="edad"></p></div>
-      ${opciones("genero", "¿Con qué género te identificas?", ["Mujer", "Hombre", "Otro", "Prefiero no decirlo"])}
-      ${opciones("rol", "En el Poli eres…", ["Estudiante", "Docente", "Administrativo"])}
-      ${opciones("jornada", "¿En qué jornada estás?", ["Diurna", "Nocturna", "Las dos"])}
-      ${opciones("dias", "¿Cuántos días a la semana vienes al City Campus?", ["1", "2", "3", "4", "5", "6", "Ninguno"], "", "dias")}
-    </div>
-    <input class="trampa" id="web" tabindex="-1" autocomplete="off" aria-hidden="true">
-    ${botones()}`,
-  2: () => `
-    <h2>Tu pausa en el City Campus</h2>
-    <div class="tarjeta">
-      ${texto("pausa", "Piensa en tu última pausa en el City Campus. ¿Qué comiste o tomaste, y de dónde salió?")}
-      ${texto("porque", "¿Por qué escogiste eso y no otra opción?")}
-      ${noche() ? texto("descanso", "En el descanso de las 8:20 p. m., ¿qué haces casi siempre?") : ""}
-      ${dia() ? texto("entreclases", "Entre clases, cuando tienes poco tiempo, ¿qué haces si quieres comer o tomar algo?") : ""}
-    </div>
-    ${botones()}`,
-  3: () => `
-    <h2>El café y el bolsillo</h2>
-    <div class="tarjeta">
-      ${opciones("cafe", "¿Tomas café?", ["Sí", "A veces", "No"])}
-      ${R.cafe === "No" ? texto("quetoma", "Entonces, ¿qué tomas en tus pausas?") : ""}
-      ${plata("gasto", "En una pausa normal en el campus, ¿cuánto gastas más o menos?", "Si no gastas nada, escribe 0.")}
-      ${tomaCafe() ? plata("caro", "¿Desde qué precio un tinto pequeño te parecería caro, aunque igual lo comprarías?") : ""}
-      ${tomaCafe() ? plata("muycaro", "¿A qué precio un tinto pequeño ya sería tan caro que no lo comprarías?") : ""}
-    </div>
-    ${botones()}`,
-  4: () => `
-    <h2>El lugar</h2>
-    <div class="tarjeta">
-      ${texto("uso", "Cuando te quedas en la cafetería del City Campus, ¿para qué la usas casi siempre?", "Con una frase basta. Si no te quedas, cuéntanos por qué.")}
-      ${texto("parciales", "En semana de parciales, ¿cambia lo que comes o tomas en el campus? ¿Cómo?")}
-    </div>
-    ${botones()}`,
-  5: () => `
-    <h2>Si dependiera de ti…</h2>
-    <div class="tarjeta">
-      ${texto("unacosa", "Si pudieras pedirle una sola cosa a la cafetería del City Campus, ¿qué sería?")}
-      ${texto("logro", "¿Conoces algún premio o logro reciente del Poli? ¿Cuál?", "Si no conoces ninguno, escribe «no». Tranquilo: no es examen.")}
-    </div>
-    ${botones()}`,
-  6: () => {
-    const lista = R.orden.map((i) => IDEAS[i]);
-    return `
-    <h2>Estas son algunas ideas</h2>
-    <div class="tarjeta">
-      <div class="pregunta" role="group" aria-labelledby="t-ideas2"><span class="titulo" id="t-ideas2">¿Cuáles 2 usarías más?</span>
-        <p class="contador" id="cuenta2">${R.ideas2.length} de 2</p>
-        <div class="ideas">${lista.map((t) => `<button type="button" data-idea2="${esc(t)}" aria-pressed="${R.ideas2.includes(t)}">${esc(t)}</button>`).join("")}</div>
-        <p class="error" data-error="ideas2"></p></div>
-      <div class="pregunta" role="group" aria-labelledby="t-menos"><span class="titulo" id="t-menos">¿Y cuál te serviría menos?</span>
-        <div class="ideas menos">${lista.map((t) => `<button type="button" data-menos="${esc(t)}" aria-pressed="${R.menos === t}" ${R.ideas2.includes(t) ? "disabled" : ""}>${esc(t)}</button>`).join("")}</div>
-        <p class="error" data-error="menos"></p></div>
-      ${texto("cambio", "¿Le cambiarías o agregarías algo a alguna de estas ideas?", "Opcional.")}
-    </div>
-    ${botones("Enviar")}`;
-  },
   gracias: () => `
     <section class="gracias">
       <img class="poligreca" src="../app/img/poligreca-celebra.svg" alt="Poligreca celebrando">
       <h1>¡Gracias! Hoy por ti, <span class="acento">mañana&nbsp;por&nbsp;mí</span></h1>
       <p>Nos regalaste 5 minutos y con eso armamos un café pensado con la gente del Poli.</p>
       <p>¿Nos ayudas con una más? Pásale el enlace a alguien del City Campus.</p>
-      <div class="acciones" style="flex-direction:column">
-        ${botonWhatsApp()}
-      </div>
+      <div class="acciones" style="flex-direction:column">${botonWhatsApp()}</div>
       <p class="lema">Somos origen. Somos país. <b>Somos Poli.</b></p>
     </section>`,
   repetida: () => `
@@ -282,9 +396,7 @@ const PANTALLAS = {
       <img class="poligreca" src="../app/img/poligreca-celebra.svg" alt="Poligreca celebrando">
       <h1>¡Ya nos ayudaste!</h1>
       <p>Ya tenemos una respuesta con ese correo. Gracias de verdad: hoy por ti, mañana por mí.</p>
-      <div class="acciones" style="flex-direction:column">
-        ${botonWhatsApp()}
-      </div>
+      <div class="acciones" style="flex-direction:column">${botonWhatsApp()}</div>
       <p class="lema">Somos origen. Somos país. <b>Somos Poli.</b></p>
     </section>`,
   menor: () => `
@@ -308,58 +420,53 @@ const PANTALLAS = {
 // ---------- validación por paso
 const correoOk = (c) => /^[^@\s]+@([a-z0-9-]+\.)*(poligran|poli)\.edu\.co$/i.test(String(c || "").trim());
 function falta(id, msg) { const e = document.querySelector(`[data-error="${id}"]`); if (e) e.textContent = msg; return false; }
-function lleno(id) { return String(R[id] ?? "").trim().length > 0; }
+const lleno = (id) => String(R[id] ?? "").trim().length > 0;
 function validar() {
   document.querySelectorAll(".error").forEach((e) => (e.textContent = ""));
   let ok = true;
-  const pide = (id, msg = "Cuéntanos algo cortico aquí.") => { if (!lleno(id)) ok = falta(id, msg); };
   if (paso === 0 && !R.acepto) ok = falta("acepto", "Para seguir, marca la casilla.");
-  if (paso === 1) {
-    if (!correoOk(R.correo)) ok = falta("correo", "Escribe tu correo del Poli (termina en poligran.edu.co).");
-    const e = Number(R.edad);
-    if (!Number.isInteger(e) || e < 14 || e > 99) ok = falta("edad", "Escribe tu edad en números.");
-    ["genero", "rol", "jornada", "dias"].forEach((k) => { if (!lleno(k)) ok = falta(k, "Escoge una opción."); });
-  }
-  if (paso === 2) { pide("pausa"); pide("porque"); if (noche()) pide("descanso"); if (dia()) pide("entreclases"); }
-  if (paso === 3) {
-    if (!lleno("cafe")) ok = falta("cafe", "Escoge una opción.");
-    if (R.cafe === "No") pide("quetoma");
-    const g = Number(R.gasto);
-    if (!lleno("gasto") || !Number.isFinite(g) || g < 0 || g > 200000) ok = falta("gasto", "Escribe un valor en pesos (puede ser 0).");
-    if (tomaCafe()) {
-      const a = Number(R.caro), b = Number(R.muycaro);
-      if (!lleno("caro") || !(a >= 100 && a <= 50000)) ok = falta("caro", "Escribe un precio en pesos.");
-      if (!lleno("muycaro") || !(b >= 100 && b <= 50000)) ok = falta("muycaro", "Escribe un precio en pesos.");
-      else if (lleno("caro") && b <= a) ok = falta("muycaro", "Este precio debería ser mayor que el anterior.");
-    }
-  }
-  if (paso === 4) { pide("uso"); pide("parciales"); }
-  if (paso === 5) { pide("unacosa"); pide("logro"); }
-  if (paso === 6) {
-    if (R.ideas2.length !== 2) ok = falta("ideas2", "Escoge exactamente 2.");
-    if (!R.menos) ok = falta("menos", "Escoge una.");
+  if (typeof paso === "number" && paso >= 1) {
+    PASOS[paso].preguntas.filter(visible).forEach((q) => {
+      const v = R[q.id];
+      if (q.tipo === "correo" && !correoOk(v)) ok = falta(q.id, "Escribe tu correo del Poli (termina en poligran.edu.co).");
+      if (q.tipo === "edad") { const e = Number(v); if (!Number.isInteger(e) || e < 14 || e > 99) ok = falta(q.id, "Escribe tu edad en números."); }
+      if (q.tipo === "abierta" && !q.opcional && !lleno(q.id)) ok = falta(q.id, q.nada ? "Escribe cuál, o toca «No conozco ninguno»." : "Cuéntanos algo cortico aquí.");
+      if ((q.tipo === "unica" || q.tipo === "escala") && !lleno(q.id)) ok = falta(q.id, "Escoge una opción.");
+      if (q.tipo === "multi" && !(Array.isArray(v) && v.length)) ok = falta(q.id, q.max ? `Escoge 1 o ${q.max}.` : "Escoge al menos una.");
+      if (q.tipo === "plata") {
+        const x = Number(v);
+        if (!lleno(q.id) || !Number.isFinite(x) || x < q.minv || x > 200000) ok = falta(q.id, q.minv ? "Escribe un precio en pesos." : "Escribe un valor en pesos (puede ser 0).");
+        else if (q.mayorQue && lleno(q.mayorQue) && x <= Number(R[q.mayorQue])) ok = falta(q.id, "Este precio debería ser mayor que el anterior.");
+      }
+      if (q.tipo === "ideas" && R.ideas2.length !== 2) ok = falta("ideas2", "Escoge exactamente 2.");
+      if (q.tipo === "menos" && !R.menos) ok = falta("menos", "Escoge una.");
+    });
   }
   if (!ok) { const p = document.querySelector(".error:not(:empty)"); if (p) p.closest(".pregunta, section")?.scrollIntoView({ behavior: "smooth", block: "center" }); }
   return ok;
 }
 
-// ---------- envío
+// ---------- envío: solo viaja lo que aplica a cada persona
 function datos(parcial = false) {
-  const n = (v) => (v === "" || v === undefined || v === null ? "" : Number(v));
   const d = {
-    correo: String(R.correo || "").trim().toLowerCase(), edad: n(R.edad), genero: R.genero, rol: R.rol, jornada: R.jornada,
-    dias: R.dias === "Ninguno" ? 0 : n(R.dias),
+    version: VERSION, correo: String(R.correo || "").trim().toLowerCase(),
     segundos: inicio ? Math.round((Date.now() - inicio) / 1000) : "",
     web: ($("#web") && $("#web").value) || R.web || "",
   };
-  if (parcial) return d;
-  return Object.assign(d, {
-    pausa: R.pausa, porque: R.porque, descanso: noche() ? R.descanso : "", entreclases: dia() ? R.entreclases : "",
-    cafe: R.cafe, quetoma: R.cafe === "No" ? R.quetoma : "", gasto: n(R.gasto),
-    caro: tomaCafe() ? n(R.caro) : "", muycaro: tomaCafe() ? n(R.muycaro) : "",
-    uso: R.uso, parciales: R.parciales, unacosa: R.unacosa, logro: R.logro,
-    ideas: R.ideas2.join(" | "), menos: R.menos, cambio: R.cambio || "",
-  });
+  const hasta = parcial ? 1 : TOTAL;
+  for (let n = 1; n <= hasta; n++) {
+    PASOS[n].preguntas.filter(visible).forEach((q) => {
+      if (q.id === "correo" || q.tipo === "concepto") return;
+      const v = R[q.id];
+      if (q.tipo === "multi") { depurar(q); d[q.id] = R[q.id].join(" | "); }
+      else if (q.tipo === "ideas") d.ideas = R.ideas2.join(" | ");
+      else if (q.tipo === "edad" || q.tipo === "plata") d[q.id] = lleno(q.id) ? Number(v) : "";
+      else if (q.tipo === "escala") d[q.id] = /^[1-5]$/.test(String(v)) ? Number(v) : (v || "");
+      else d[q.id] = v ?? "";
+    });
+  }
+  d.dias = R.dias === "Ninguno" ? 0 : Number(R.dias) || "";
+  return d;
 }
 async function enviar(parcial = false) {
   if (enviando) return;
@@ -381,29 +488,52 @@ async function enviar(parcial = false) {
   } else {
     if (b) { b.disabled = false; b.textContent = parcial ? "Siguiente" : "Enviar"; }
     const msg = resultado.error === "correo" ? "Revisa tu correo del Poli: no lo pudimos validar." : "No se pudo enviar. Revisa tu conexión e inténtalo otra vez.";
-    if (resultado.error === "correo") { paso = 1; mostrar(); falta("correo", msg); } else falta(paso === 6 ? "menos" : "dias", msg);
+    if (resultado.error === "correo") { paso = 1; mostrar(); falta("correo", msg); }
+    else { const ult = PASOS[paso].preguntas.filter(visible).slice(-1)[0]; falta(ult.tipo === "ideas" ? "ideas2" : ult.id, msg); }
   }
 }
 
 // ---------- navegación
 function ir(p) { paso = p; mostrar(); window.scrollTo({ top: 0, behavior: "smooth" }); }
+function rehacer() { const y = window.scrollY; mostrar(); window.scrollTo(0, y); }
 function mostrar() {
   encabezado();
-  $("#contenido").innerHTML = (PANTALLAS[paso] || PANTALLAS[0])();
+  $("#contenido").innerHTML = typeof paso === "number" && paso >= 1 ? pantallaPaso(paso) : (PANTALLAS[paso] || PANTALLAS[0])();
   enlazar();
   guardar();
 }
+const pregunta = (id) => PASOS.slice(1).flatMap((p) => p.preguntas).find((q) => q.id === id);
 function enlazar() {
   document.querySelectorAll("[data-campo]").forEach((el) => {
-    el.addEventListener("input", () => { R[el.dataset.campo] = el.value; guardar(); });
+    el.addEventListener("input", () => { R[el.dataset.campo] = el.value; falta(el.dataset.campo, ""); guardar(); });
   });
   document.querySelectorAll("[data-opcion]").forEach((b) => b.addEventListener("click", () => {
     const id = b.dataset.opcion;
     R[id] = b.dataset.valor;
     document.querySelectorAll(`[data-opcion="${id}"]`).forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
-    const e = document.querySelector(`[data-error="${id}"]`); if (e) e.textContent = "";
-    if (id === "cafe" && paso === 3) { const y = window.scrollY; mostrar(); window.scrollTo(0, y); }  // muestra u oculta las preguntas que dependen del café
+    falta(id, "");
+    if (pregunta(id)?.rehace) rehacer();  // muestra u oculta lo que depende de esta respuesta
     guardar();
+  }));
+  document.querySelectorAll("[data-multi]").forEach((b) => b.addEventListener("click", () => {
+    const id = b.dataset.multi, o = b.dataset.valor, q = pregunta(id);
+    let sel = Array.isArray(R[id]) ? [...R[id]] : [];
+    if (sel.includes(o)) sel = sel.filter((x) => x !== o);
+    else if ((q.solo || []).includes(o)) sel = [o];                        // «Nada», «No me quedo»…: no se combina con otras
+    else {
+      sel = sel.filter((x) => !(q.solo || []).includes(x));
+      if (q.max && sel.length >= q.max) return falta(id, `Ya escogiste ${q.max}. Quita una para cambiarla.`);
+      sel.push(o);
+    }
+    R[id] = sel;
+    document.querySelectorAll(`[data-multi="${id}"]`).forEach((x) => x.setAttribute("aria-pressed", String(sel.includes(x.dataset.valor))));
+    falta(id, "");
+    guardar();
+  }));
+  document.querySelectorAll("[data-nada]").forEach((b) => b.addEventListener("click", () => {
+    const q = pregunta(b.dataset.nada);
+    R[q.id] = R[q.id] === q.nada ? "" : q.nada;
+    rehacer();
   }));
   document.querySelectorAll("[data-idea2]").forEach((b) => b.addEventListener("click", () => {
     const t = b.dataset.idea2;
@@ -411,12 +541,12 @@ function enlazar() {
     else if (R.ideas2.length < 2) R.ideas2.push(t);
     else return falta("ideas2", "Ya escogiste 2. Quita una para cambiarla.");
     if (R.ideas2.includes(R.menos)) R.menos = "";  // una idea favorita no puede ser también la que menos sirve
-    const y = window.scrollY; mostrar(); window.scrollTo(0, y);
+    rehacer();
   }));
   document.querySelectorAll("[data-menos]").forEach((b) => b.addEventListener("click", () => {
     R.menos = b.dataset.menos;
     document.querySelectorAll("[data-menos]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
-    const e = document.querySelector('[data-error="menos"]'); if (e) e.textContent = "";
+    falta("menos", "");
     guardar();
   }));
   const acepto = $("#acepto"); if (acepto) acepto.addEventListener("change", () => { R.acepto = acepto.checked; guardar(); });
@@ -430,7 +560,7 @@ function enlazar() {
       if (Number(R.edad) < 18) { try { localStorage.removeItem(CLAVE); } catch (e) {} R = { ideas2: [], menos: "", orden: R.orden }; return ir("menor"); }
       if (R.dias === "Ninguno") return enviar(true);
     }
-    if (paso === 6) return enviar(false);
+    if (paso === TOTAL) return enviar(false);
     ir(paso + 1);
   });
 }
