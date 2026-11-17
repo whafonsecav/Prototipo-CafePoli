@@ -84,7 +84,7 @@ export const PASOS = [
   { id: "qr", nodo: "barra", mira: P.qr, fov: 40, titulo: "El truco para no hacer fila", accion: { texto: "📱 Probar la app real", tipo: "enlace", url: "app/" },
     texto: "Ahora, el truco para no hacer fila. Este QR está en la barra y pegado en cada mesa, así que no se pierde ni se lo lleva nadie. Lo escaneas, se abre la app de Café Poli y pides desde donde estés. En el descanso de la noche llegan más pedidos de los que la barra alcanza a atender en veinte minutos; con la app sí alcanza. Mira, te la muestro." },
   { id: "appInicio", nodo: "barra", titulo: "La app de Café Poli",
-    texto: "Esta es la app. Arriba están tus Puntos Colibrí y cuánto te falta para el próximo tinto gratis. Abajo hay cuatro botones: pedir y recoger sin fila, regalar un Café Poli, tus puntos y trae tu vaso. Vamos uno por uno, sin afán.",
+    texto: "Esta es la app. Arriba están tus Puntos Colibrí y cuánto valen en pesos. Abajo hay cuatro botones: pedir y recoger sin fila, regalar un Café Poli, tus puntos y trae tu vaso. Vamos uno por uno, sin afán.",
     escena: { tipo: "app", guion: "inicio" } },
   { id: "appPedir", nodo: "barra", titulo: "Pide por tamaño",
     texto: "Primero, pedir. Es la misma carta de la barra, con los mismos precios, y eliges el tamaño en onzas. Andrés, nuestro estudiante de la noche, pide un capuchino de doce onzas y un pan de bono. Buen gusto, Andrés.",
@@ -115,13 +115,13 @@ export const PASOS = [
 
   // ---------------------------------------------------------------- Club Colibrí y tu vaso
   { id: "appPuntos", nodo: "barra", titulo: "Club Colibrí",
-    texto: "En Puntos está el Club Colibrí. Te inscribes con tu correo del Poli y sumas un punto por cada mil pesos. Con cien puntos, el tinto es tuyo. Andrés ya tiene ciento cuatro, así que lo canjea aquí mismo. Y en tu cumpleaños, con tu compra, la galleta del colibrí va por nuestra cuenta.",
+    texto: "En Puntos está el Club Colibrí. Te inscribes con tu correo del Poli y sumas veinte puntos por cada mil pesos. Cada punto vale un peso, y con ellos pagas todo o una parte de lo que quieras. Andrés ya tiene dos mil ochenta, así que los usa en su próximo pedido. Y en tu cumpleaños, con tu compra, la galleta del colibrí va por nuestra cuenta.",
     escena: { tipo: "app", guion: "puntos" } },
   { id: "appCumple", nodo: "barra", titulo: "La app te felicita",
     texto: "Y como te registras con tu correo del Poli y tu fecha de cumpleaños, ese día la app te felicita y te invita a pasar por la galleta del colibrí. Eso sí, solo en días hábiles: si tu cumpleaños cae un domingo o un festivo, ese día no abrimos para consentirte… pero te queremos igual.",
     escena: { tipo: "app", guion: "cumple" } },
   { id: "appVaso", nodo: "barra", titulo: "Trae tu propio vaso",
-    texto: "Y este botón es el que más me gusta: trae tu propio vaso. Tu vaso o tu termo, el que quieras. Pagas por tamaño, ocho, doce o dieciséis onzas, y en las bebidas que preparamos siempre son trescientos pesos menos. Una de cada diez veces, además, te ganas un tinto. El planeta te lo agradece, y tu bolsillo también.",
+    texto: "Y este botón es el que más me gusta: trae tu propio vaso. Tu vaso o tu termo, el que quieras. Pagas por tamaño, ocho, doce o dieciséis onzas, y en las bebidas que preparamos siempre son trescientos pesos menos. El planeta te lo agradece, y tu bolsillo también.",
     escena: { tipo: "app", guion: "vaso" } },
 
   // ---------------------------------------------------------------- Recogida y bolsa del final del día

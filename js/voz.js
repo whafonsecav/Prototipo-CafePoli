@@ -16,6 +16,7 @@ export function claveVoz(texto) {
 }
 // ==== MANIFIESTO (lo escribe scripts/generar_voz.py; no editar a mano)
 export const VOZ = {
+  "108mmh2t719": "audio/108mmh2t719.mp3",
   "10q6bfzpnc9": "audio/10q6bfzpnc9.mp3",
   "11l3tbueww0": "audio/11l3tbueww0.mp3",
   "132v8wcqi0n": "audio/132v8wcqi0n.mp3",
@@ -35,6 +36,7 @@ export const VOZ = {
   "1fd6uq3rldy": "audio/1fd6uq3rldy.mp3",
   "1fdrpikmsep": "audio/1fdrpikmsep.mp3",
   "1fixgtc3ju4": "audio/1fixgtc3ju4.mp3",
+  "1frewmubs82": "audio/1frewmubs82.mp3",
   "1gg5y323jfu": "audio/1gg5y323jfu.mp3",
   "1icpcg7bky4": "audio/1icpcg7bky4.mp3",
   "1io45hrmz3j": "audio/1io45hrmz3j.mp3",
@@ -72,7 +74,6 @@ export const VOZ = {
   "23wavk00ohx": "audio/23wavk00ohx.mp3",
   "24dsinpcdot": "audio/24dsinpcdot.mp3",
   "24yq6dl9dbm": "audio/24yq6dl9dbm.mp3",
-  "25c3gwnyeqw": "audio/25c3gwnyeqw.mp3",
   "25e0a51jpx2": "audio/25e0a51jpx2.mp3",
   "27gafbqjaa8": "audio/27gafbqjaa8.mp3",
   "28fd77ok77f": "audio/28fd77ok77f.mp3",
@@ -80,6 +81,7 @@ export const VOZ = {
   "28juy2e2noi": "audio/28juy2e2noi.mp3",
   "28ytdfgp7en": "audio/28ytdfgp7en.mp3",
   "29iehfe4kww": "audio/29iehfe4kww.mp3",
+  "2akjfrz0it6": "audio/2akjfrz0it6.mp3",
   "2as5a8suwax": "audio/2as5a8suwax.mp3",
   "2ax6xzcmewm": "audio/2ax6xzcmewm.mp3",
   "2bo2uamq5yf": "audio/2bo2uamq5yf.mp3",
@@ -96,8 +98,6 @@ export const VOZ = {
   "4mjbu4n74w": "audio/4mjbu4n74w.mp3",
   "66l2jvegu0": "audio/66l2jvegu0.mp3",
   "7rt220qr78": "audio/7rt220qr78.mp3",
-  "7zsh6kf0ec": "audio/7zsh6kf0ec.mp3",
-  "82ylfa0shh": "audio/82ylfa0shh.mp3",
   "8qkweohqq": "audio/8qkweohqq.mp3",
   "a56g5rrd4k": "audio/a56g5rrd4k.mp3",
   "aa2h37stnv": "audio/aa2h37stnv.mp3",
@@ -110,10 +110,12 @@ export const VOZ = {
   "hl8wrkw4q0": "audio/hl8wrkw4q0.mp3",
   "i1xmruidkh": "audio/i1xmruidkh.mp3",
   "iw7nhcmts9": "audio/iw7nhcmts9.mp3",
+  "kagohbzi94": "audio/kagohbzi94.mp3",
   "ksmarsracx": "audio/ksmarsracx.mp3",
   "ktcbgac6dl": "audio/ktcbgac6dl.mp3",
   "m7g540uvz1": "audio/m7g540uvz1.mp3",
   "njlq36clg": "audio/njlq36clg.mp3",
+  "on2xqik2fw": "audio/on2xqik2fw.mp3",
   "p5bai1y7ll": "audio/p5bai1y7ll.mp3",
   "qxoi8h7876": "audio/qxoi8h7876.mp3",
   "rmdowcgv4p": "audio/rmdowcgv4p.mp3",
@@ -124,8 +126,6 @@ export const VOZ = {
   "vpd5vy8n62": "audio/vpd5vy8n62.mp3",
   "w5mmil9tl9": "audio/w5mmil9tl9.mp3",
   "xgagrqruef": "audio/xgagrqruef.mp3",
-  "xrm86v50xu": "audio/xrm86v50xu.mp3",
   "y3x67gtn1b": "audio/y3x67gtn1b.mp3",
-  "yl38q1u06y": "audio/yl38q1u06y.mp3",
   "zsem5jxmrm": "audio/zsem5jxmrm.mp3"
 };

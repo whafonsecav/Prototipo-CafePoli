@@ -16,7 +16,7 @@ const nombreCorto = (p) => p.nombre.split(":")[0].replace(/ \(.*\)/, "");
 
 const ESTADO0 = () => ({
   usuario: "Andrés",
-  puntos: 86,
+  puntos: 1720,
   carrito: {},
   conVaso: false,
   hora: "En el descanso (8:20 p. m.)",
@@ -25,9 +25,9 @@ const ESTADO0 = () => ({
     para: "Alguien especial", producto: "latte", tarjeta: true, nombre: "Mary",
     cel: "Mary ❤ · de tus contactos", mensaje: "Para que mañana arranques con todo. Esta pausa va por mí. ¿Nos vemos en Modo Conexión?", firma: "Andrés",
   },
-  historial: [["La pausa", 3], ["Capuchino", 4], ["Tinto", 2], ["Combo Parcial", 6]],
+  historial: [["La pausa", 60], ["Capuchino", 80], ["Tinto", 40], ["Combo Parcial", 120]],
   ultimoCodigo: "CP-7KQ4",
-  ultimoPedido: { codigo: "A47", hora: "En el descanso (8:20 p. m.)", puntos: 6 },
+  ultimoPedido: { codigo: "A47", hora: "En el descanso (8:20 p. m.)", puntos: 140 },
   bolsa: { quedan: 6, codigo: "BF-218" },
   relojFijo: null,
 });
@@ -47,8 +47,8 @@ const NARRA = {
   regaloListo: ["El código del regalo", "Se crea un código único que vale treinta días. Ahora lo mandas por WhatsApp."],
   whatsapp: ["Así le llega", "Le llega por WhatsApp con tu mensaje, tu firma y el código para reclamarlo."],
   reclamar: ["Así lo reclama", "Muestra el código en la barra, el barista lo valida y se lo entrega por su nombre, con la tarjeta impresa de tu mensaje."],
-  puntos: ["Tus Puntos Colibrí", "Un punto por cada mil pesos; con cien, el tinto es tuyo. Y el día de tu cumpleaños, con tu compra, la galleta del colibrí va por nuestra cuenta."],
-  vaso: ["Trae tu propio vaso", "Si traes tu vaso o tu termo, la bebida vale trescientos pesos menos en cualquier tamaño, y una de cada diez veces te ganas un tinto."],
+  puntos: ["Tus Puntos Colibrí", "Sumas veinte puntos por cada mil pesos, y cada punto vale un peso: con ellos pagas todo o una parte de lo que quieras. Y el día de tu cumpleaños, con tu compra, la galleta del colibrí va por nuestra cuenta."],
+  vaso: ["Trae tu propio vaso", "Si traes tu vaso o tu termo, la bebida preparada vale trescientos pesos menos, en cualquier tamaño."],
   cumple: ["Feliz cumpleaños", "Como te registraste con tu correo del Poli, el día de tu cumpleaños la app te felicita y te invita a pasar por la galleta del colibrí, si es día hábil."],
   bolsa: ["La bolsa del final del día", "Desde las ocho y media de la noche, la app te avisa: dos productos del día por tres mil pesos. La reservas, la pagas y la recoges con tu código antes del cierre."],
 };
@@ -157,7 +157,7 @@ const GUIONES = {
   },
   async listo(g) {
     estado = ESTADO0(); estado.relojFijo = "8:04 p. m."; actualizarHora();
-    estado.ultimoPedido = { codigo: "A47", hora: "En el descanso (8:20 p. m.)", puntos: 6, lineas: ["1 × Capuchino 12 oz", "1 × Pan de bono"] }; estado.puntos = 92;
+    estado.ultimoPedido = { codigo: "A47", hora: "En el descanso (8:20 p. m.)", puntos: 140, lineas: ["1 × Capuchino 12 oz", "1 × Pan de bono"] }; estado.puntos = 1860;
     ir("pagado"); await pausa(3500, g);
     resaltar(".tarjeta-pedido"); await pausa(5000, g); resaltar(".tarjeta-pedido", false);
     resaltar(".tarjeta-sumaste");
@@ -202,10 +202,10 @@ const GUIONES = {
     for (const s of ["#paso-r1", "#paso-r2", "#paso-r3"]) { resaltar(s); await pausa(3600, g); resaltar(s, false); }
   },
   async puntos(g) {
-    estado = ESTADO0(); estado.relojFijo = "6:40 p. m."; actualizarHora(); estado.puntos = 104;
+    estado = ESTADO0(); estado.relojFijo = "6:40 p. m."; actualizarHora(); estado.puntos = 2080;
     ir("puntos"); await pausa(4200, g);
     resaltar(".puntos-grande"); await pausa(3600, g); resaltar(".puntos-grande", false);
-    tocar("#btn-canjear"); await pausa(400, g); pant.querySelector("#btn-canjear")?.click(); await pausa(3200, g);
+    tocar("#btn-usar-puntos"); await pausa(400, g); pant.querySelector("#btn-usar-puntos")?.click(); await pausa(3200, g);
     resaltar(".tarjeta-cumple");
   },
   async cumple(g) {
@@ -341,8 +341,7 @@ const PANTALLAS = {
       <div class="app-cuerpo">
         <div class="tarjeta tarjeta-puntos">
           <h4>⭐ ${estado.puntos} Puntos Colibrí</h4>
-          <div class="puntos-barra"><span style="width:${Math.min(100, estado.puntos)}%"></span></div>
-          <p>${estado.puntos >= 100 ? "¡Ya tienes un tinto gratis para canjear!" : `Te faltan ${100 - estado.puntos} puntos para tu próximo tinto.`}</p>
+          <p>Valen ${fmt(estado.puntos)}: úsalos para pagar todo o parte de lo que pidas.</p>
         </div>
         <div class="botones-inicio">
           <button class="boton-grande bg-magenta" data-ir="menu"><span>☕</span>Pedir y recoger sin fila</button>
@@ -409,7 +408,7 @@ const PANTALLAS = {
       <div class="app-cuerpo exito">
         <div class="grande">✅</div>
         <div class="tarjeta tarjeta-pedido"><h4>Pedido ${p.codigo}</h4>${(p.lineas || []).map((l) => `<p>${l}</p>`).join("")}<p>Recógelo ${p.hora.toLowerCase()} en la barra. La pantalla de pedidos te avisa y el barista te llama: «¡${estado.usuario}!».</p></div>
-        <div class="tarjeta tarjeta-sumaste"><h4>+${p.puntos} Puntos Colibrí</h4><p>Ahora tienes ${estado.puntos} puntos. ${estado.puntos >= 100 ? "¡Ya puedes canjear un tinto!" : `Te faltan ${100 - estado.puntos} para un tinto.`}</p></div>
+        <div class="tarjeta tarjeta-sumaste"><h4>+${p.puntos} Puntos Colibrí</h4><p>Ahora tienes ${estado.puntos} puntos, que valen ${fmt(estado.puntos)} para tu próxima compra.</p></div>
         <button class="btn btn-principal" data-ir="inicio" style="width:100%">Volver al inicio</button>
       </div>
     </div>`;
@@ -503,10 +502,9 @@ Código: *${estado.ultimoCodigo}* · muéstralo en la barra. Vale 30 días.<time
         <div class="tarjeta puntos-grande" style="text-align:center">
           <div class="num-puntos">${estado.puntos}</div>
           <p>Puntos Colibrí</p>
-          <div class="puntos-barra"><span style="width:${Math.min(100, estado.puntos)}%"></span></div>
-          <p>1 punto por cada $1.000 · 100 puntos = 1 tinto</p>
+          <p>Valen <b>${fmt(estado.puntos)}</b> · 1 punto = $1 · 20 puntos por cada $1.000</p>
         </div>
-        <button class="btn btn-principal" id="btn-canjear" style="width:100%" ${estado.puntos >= 100 ? "" : "disabled"}>${estado.puntos >= 100 ? "Canjear un tinto" : `Te faltan ${100 - estado.puntos} puntos`}</button>
+        <button class="btn btn-principal" id="btn-usar-puntos" style="width:100%" ${estado.puntos > 0 ? "" : "disabled"}>Usar mis puntos en el próximo pedido</button>
         <div id="canje"></div>
         <div class="categoria">Tus últimas compras</div>
         ${estado.historial.slice(-5).reverse().map(([n, p]) => `<div class="linea"><span>${n}</span><span>${p > 0 ? "+" : ""}${p}</span></div>`).join("")}
@@ -525,7 +523,6 @@ Código: *${estado.ultimoCodigo}* · muéstralo en la barra. Vale 30 días.<time
           <h4>Pagas por onzas y ${fmt(DESCUENTO_TERMO)} menos</h4>
           ${ej.map((p) => `<div class="fila-vaso"><span>${nombreCorto(p)}</span><span class="tams-vaso">${tams(p).map((s) => `<i>${s.oz ? s.oz + " oz " : ""}<s>${fmt(s.precio)}</s> <b>${fmt(s.precio - DESCUENTO_TERMO)}</b></i>`).join("")}</span></div>`).join("")}
         </div>
-        <div class="tarjeta tarjeta-suerte"><h4>🍀 1 de cada 10</h4><p>Cada vez que traes tu vaso participas: una de cada diez veces te ganas un tinto.</p></div>
         <div class="tarjeta tarjeta-tienda"><h4>¿No tienes vaso?</h4><p>En la Tienda Poli está el vaso reutilizable Café Poli en 8, 12 y 16 onzas, y el termo de acero. Se paga solo con el ahorro.</p></div>
         <button class="btn btn-principal" data-ir="menu" style="width:100%">Pedir con mi vaso</button>
       </div>
@@ -584,7 +581,7 @@ const ENLACES = {
       setTimeout(() => {
         if (!telefonoAbierto()) return;
         const t = totalCarrito();
-        const puntos = Math.floor(t.total / 1000);
+        const puntos = Math.floor(t.total / 1000) * 20;
         estado.puntos += puntos;
         const lineas = Object.entries(estado.carrito).map(([k, n]) => { const { id, oz } = partirClave(k); return `${n} × ${nombreCorto(porId(id))}${oz ? ` ${oz} oz` : ""}`; });
         estado.historial.push([lineas.map((l) => l.replace(/^\d+ × /, "")).join(", "), puntos]);
@@ -620,7 +617,7 @@ const ENLACES = {
       btn.innerHTML = `<span class="cargando"></span> Pagando…`;
       setTimeout(() => {
         if (!telefonoAbierto()) return;
-        const pts = Math.floor((porId(r.producto).precio + (r.tarjeta ? DETALLE_REGALO.precio : 0)) / 1000);
+        const pts = Math.floor((porId(r.producto).precio + (r.tarjeta ? DETALLE_REGALO.precio : 0)) / 1000) * 20;
         estado.puntos += pts;
         estado.historial.push([`Regalo para ${r.nombre}`, pts]);
         ir("regaloListo", { narrar: !guiado });
@@ -651,13 +648,11 @@ const ENLACES = {
     });
   },
   puntos: () => {
-    const b = document.getElementById("btn-canjear");
-    if (b && estado.puntos >= 100) b.addEventListener("click", () => {
-      estado.puntos -= 100;
-      estado.historial.push(["Canje: tinto gratis", -100]);
-      document.getElementById("canje").innerHTML = `<div class="tarjeta exito"><h4>¡Tinto canjeado!</h4><p>Muestra este código en la barra:</p><div class="codigo">TINTO-482</div></div>`;
+    const b = document.getElementById("btn-usar-puntos");
+    if (b && estado.puntos > 0) b.addEventListener("click", () => {
+      document.getElementById("canje").innerHTML = `<div class="tarjeta exito"><h4>¡Listo!</h4><p>Tus ${estado.puntos} puntos (${fmt(estado.puntos)}) se descuentan al pagar tu próximo pedido: lo pagan todo o una parte.</p></div>`;
       b.disabled = true;
-      b.textContent = `Te quedan ${estado.puntos} puntos`;
+      b.textContent = "Puntos listos para tu pedido";
     });
   },
   bolsa: () => {
