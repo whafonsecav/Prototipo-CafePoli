@@ -779,7 +779,10 @@ $("btn-mapa").addEventListener("click", () => { $("mapa").classList.toggle("ocul
 $("mapa-cerrar").addEventListener("click", () => $("mapa").classList.add("oculto"));
 $("btn-app").addEventListener("click", () => ejecutar({ tipo: "app", pantalla: "inicio" }));
 $("btn-maqueta").addEventListener("click", () => { if (modo === "guiado") ponerModo("libre", false); ejecutar({ tipo: "maqueta" }); });
-$("btn-pantalla").addEventListener("click", () => (!document.fullscreenElement ? document.documentElement.requestFullscreen?.() : document.exitFullscreen?.()));
+$("btn-pantalla").addEventListener("click", () => {
+  if (document.fullscreenElement || document.webkitFullscreenElement) (document.exitFullscreen || document.webkitExitFullscreen)?.call(document);
+  else pantallaCompleta().then(() => { if (ES_MOVIL) girarHorizontal(); });
+});
 
 let avisoT = null;
 function aviso(t, ms = 3200) { const a = $("toast"); a.textContent = t; a.classList.remove("oculto"); clearTimeout(avisoT); avisoT = setTimeout(() => a.classList.add("oculto"), ms); }
@@ -829,7 +832,27 @@ function entrar(i = 0) {
   irPaso(i, { rapido: true, voz: !params.has("captura") });
   requestAnimationFrame(medirGuia);
 }
+// ------------------------------------------------------------------ celular: pantalla completa y en horizontal
+// En un celular, el primer toque en «Entrar» pide pantalla completa y gira la vista a horizontal (Android/Chrome).
+// Donde el navegador no deja (iPhone/Safari), aparece un aviso para girar el celular, que se puede cerrar.
+const ES_MOVIL = matchMedia("(pointer: coarse)").matches && Math.min(screen.width, screen.height) < 820;
+function pantallaCompleta() {
+  const el = document.documentElement;
+  const pedir = el.requestFullscreen || el.webkitRequestFullscreen;
+  if (!pedir || document.fullscreenElement || document.webkitFullscreenElement) return Promise.resolve();
+  try { return Promise.resolve(pedir.call(el, { navigationUI: "hide" })).catch(() => {}); } catch { return Promise.resolve(); }
+}
+function girarHorizontal() {
+  try { const p = screen.orientation && screen.orientation.lock && screen.orientation.lock("landscape"); if (p && p.catch) p.catch(() => {}); } catch {}
+}
+function modoHorizontal() {
+  if (!ES_MOVIL) return;
+  document.body.classList.add("es-movil", "en-recorrido");
+  pantallaCompleta().then(girarHorizontal);
+}
+$("btn-girar-seguir").addEventListener("click", () => document.body.classList.add("girar-visto"));
 $("btn-entrar").addEventListener("click", () => {
+  modoHorizontal();
   desbloquearVoz();
   let g = 0;
   try { g = Number(localStorage.getItem("cafepoli.paso360") || 0); } catch {}

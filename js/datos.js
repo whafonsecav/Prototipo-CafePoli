@@ -103,6 +103,9 @@ export const CARTA = [
     i("pausa", "La pausa: tinto + pan de bono", 3800, { ...B, cafe: true }),
     i("desayuno", "Desayuno de la casa: café con leche + arepa con huevo", 6500, { ...B, cafe: true }),
     i("tardecata", "Tarde de cata: cata de tres tés + postre para dos", 13500),
+    i("duo", "Dúo Conexión: 2 cafés con leche + 2 pan de bono", 9900, { ...B, cafe: true }),
+    i("noche", "Combo Noche: chocolate santafereño + empanada", 5500, { ...B }),
+    i("bandeja", "Bandeja para el grupo: 3 pan de bono + 3 almojábanas (pague 5, lleve 6)", 10000),
   ]},
   { cat: "Tienda Café Poli", color: "#5C6B7A", tipo: "comidas", icono: "vaso", lema: "Trae tu propio vaso: las bebidas preparadas, en cualquier tamaño, valen $300 menos.", nota: "Para tomar aquí te servimos en pocillo de porcelana. Además, productos oficiales del Poli en consignación: camisetas, chalecos, chaquetas, llaveros y peluches de Poligreca.", items: [
     i("vaso", "Vaso reutilizable Café Poli (8, 12 o 16 oz)", 12000, { nota: "8 oz $10.000 · 12 oz $12.000 · 16 oz $14.000" }),
